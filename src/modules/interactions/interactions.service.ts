@@ -52,29 +52,48 @@ export class InteractionsService {
     const id = createId();
     const messageValue = typeStr === 'SUPER_LIKE' && message ? message : null;
 
-    // Upsert interaction
+    // Debug logging
+    console.log('Creating interaction:', {
+      id,
+      fromUserId,
+      toUserId,
+      dbType,
+      messageValue,
+      likeCount,
+      expiresAt,
+      typeStr,
+    });
+
+    // Upsert interaction - only include message field for super_like
+    const insertData = {
+      id,
+      fromUserId,
+      toUserId,
+      type: dbType as 'like' | 'super_like' | 'skip',
+      isRead: false,
+      likeCount,
+      expiresAt,
+      ...(typeStr === 'SUPER_LIKE' && message ? { message } : {}),
+    };
+
+    const updateData = {
+      type: dbType as 'like' | 'super_like' | 'skip',
+      isRead: false,
+      likeCount,
+      expiresAt,
+      createdAt: now,
+      ...(typeStr === 'SUPER_LIKE' && message ? { message } : {}),
+    };
+
+    console.log('Insert data:', insertData);
+    console.log('Update data:', updateData);
+
     const result = await this.db
       .insert(interactions)
-      .values({
-        id,
-        fromUserId,
-        toUserId,
-        type: dbType as 'like' | 'super_like' | 'skip',
-        message: messageValue,
-        isRead: false,
-        likeCount,
-        expiresAt,
-      })
+      .values(insertData)
       .onConflictDoUpdate({
         target: [interactions.fromUserId, interactions.toUserId],
-        set: {
-          type: dbType as 'like' | 'super_like' | 'skip',
-          message: messageValue,
-          isRead: false,
-          likeCount,
-          expiresAt,
-          createdAt: now,
-        },
+        set: updateData,
       })
       .returning();
 
