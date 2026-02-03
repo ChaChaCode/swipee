@@ -21,7 +21,7 @@ export class ProfilesResolver {
   @Mutation(() => ProfileModel)
   async updateProfile(
     @Args('userId', { type: () => ID }) userId: string,
-    @Args('input') input: UpdateProfileInput,
+    @Args('input', { type: () => UpdateProfileInput }) input: UpdateProfileInput,
   ) {
     console.log('updateProfile input:', JSON.stringify(input, null, 2));
 
