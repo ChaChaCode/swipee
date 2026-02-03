@@ -13,10 +13,15 @@ export class InteractionsService {
   constructor(@Inject(DRIZZLE) private db: Database) {}
 
   async create(input: CreateInteractionInput) {
+    console.log('=== CREATE INTERACTION INPUT ===', JSON.stringify(input));
+
     const { fromUserId, toUserId, type, message } = input;
+
+    console.log('Parsed values:', { fromUserId, toUserId, type, message });
 
     // Map enum to database value
     const typeStr = String(type).toUpperCase();
+    console.log('typeStr:', typeStr);
 
     // Validate super_like has message
     if (typeStr === 'SUPER_LIKE' && !message) {
@@ -24,7 +29,9 @@ export class InteractionsService {
     }
 
     // Check existing interaction
+    console.log('Calling findInteraction with:', { fromUserId, toUserId });
     const existing = await this.findInteraction(fromUserId, toUserId);
+    console.log('findInteraction result:', existing);
     const now = new Date();
 
     // Check cooldown (24 hours)
