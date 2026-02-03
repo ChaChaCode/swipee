@@ -10,6 +10,7 @@ import { MatchesModule } from './modules/matches';
 import { MessagesModule } from './modules/messages';
 import { UploadModule } from './modules/upload';
 import { OnboardingModule } from './modules/onboarding';
+import { DiscoveryModule } from './modules/discovery';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { OnboardingModule } from './modules/onboarding';
     MessagesModule,
     UploadModule,
     OnboardingModule,
+    DiscoveryModule,
   ],
 })
 export class AppModule {}

@@ -1,15 +1,19 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
+import { Min, Max, MinLength, MaxLength, ArrayMinSize, ArrayMaxSize } from 'class-validator';
 import { Gender, LookingFor } from '../models/onboarding.model';
 
 @InputType()
 export class SetNameInput {
   @Field()
+  @MinLength(1)
+  @MaxLength(50)
   name: string;
 }
 
 @InputType()
 export class SetBioInput {
   @Field()
+  @MaxLength(500)
   bio: string;
 }
 
@@ -34,6 +38,8 @@ export class SetInterestsInput {
 @InputType()
 export class SetPhotosInput {
   @Field(() => [String])
+  @ArrayMinSize(2)
+  @ArrayMaxSize(5)
   photoUrls: string[];
 }
 
@@ -52,18 +58,25 @@ export class SetLocationInput {
 @InputType()
 export class SetAgeInput {
   @Field(() => Int)
+  @Min(16)
+  @Max(120)
   age: number;
 }
 
 @InputType()
 export class CompleteOnboardingInput {
   @Field()
+  @MinLength(1)
+  @MaxLength(50)
   name: string;
 
   @Field({ nullable: true })
+  @MaxLength(500)
   bio?: string;
 
   @Field(() => Int)
+  @Min(16)
+  @Max(120)
   age: number;
 
   @Field(() => Gender)
@@ -76,6 +89,8 @@ export class CompleteOnboardingInput {
   interestIds: string[];
 
   @Field(() => [String])
+  @ArrayMinSize(2)
+  @ArrayMaxSize(5)
   photoUrls: string[];
 
   @Field({ nullable: true })
