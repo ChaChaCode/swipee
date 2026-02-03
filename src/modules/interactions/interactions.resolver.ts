@@ -22,7 +22,6 @@ export class InteractionsResolver {
     @Args('message', { type: () => String, nullable: true }) message?: string,
   ): Promise<InteractionResultModel> {
     const input = { fromUserId, toUserId, type, message };
-    console.log('=== ARGS ===', { fromUserId, toUserId, type, message });
     const interaction = await this.interactionsService.create(input);
 
     let isMatch = false;

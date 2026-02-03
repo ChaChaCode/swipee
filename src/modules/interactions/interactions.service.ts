@@ -13,15 +13,10 @@ export class InteractionsService {
   constructor(@Inject(DRIZZLE) private db: Database) {}
 
   async create(input: CreateInteractionInput) {
-    console.log('=== CREATE INTERACTION INPUT ===', JSON.stringify(input));
-
     const { fromUserId, toUserId, type, message } = input;
-
-    console.log('Parsed values:', { fromUserId, toUserId, type, message });
 
     // Map enum to database value
     const typeStr = String(type).toUpperCase();
-    console.log('typeStr:', typeStr);
 
     // Validate super_like has message
     if (typeStr === 'SUPER_LIKE' && !message) {
@@ -29,9 +24,7 @@ export class InteractionsService {
     }
 
     // Check existing interaction
-    console.log('Calling findInteraction with:', { fromUserId, toUserId });
     const existing = await this.findInteraction(fromUserId, toUserId);
-    console.log('findInteraction result:', existing);
     const now = new Date();
 
     // Check cooldown (24 hours)
@@ -57,50 +50,30 @@ export class InteractionsService {
     }
 
     const id = createId();
-    const messageValue = typeStr === 'SUPER_LIKE' && message ? message : null;
 
-    // Debug logging
-    console.log('Creating interaction:', {
-      id,
-      fromUserId,
-      toUserId,
-      dbType,
-      messageValue,
-      likeCount,
-      expiresAt,
-      typeStr,
-    });
-
-    // Upsert interaction - only include message field for super_like
-    const insertData = {
-      id,
-      fromUserId,
-      toUserId,
-      type: dbType as 'like' | 'super_like' | 'skip',
-      isRead: false,
-      likeCount,
-      expiresAt,
-      ...(typeStr === 'SUPER_LIKE' && message ? { message } : {}),
-    };
-
-    const updateData = {
-      type: dbType as 'like' | 'super_like' | 'skip',
-      isRead: false,
-      likeCount,
-      expiresAt,
-      createdAt: now,
-      ...(typeStr === 'SUPER_LIKE' && message ? { message } : {}),
-    };
-
-    console.log('Insert data:', insertData);
-    console.log('Update data:', updateData);
-
+    // Upsert interaction
     const result = await this.db
       .insert(interactions)
-      .values(insertData)
+      .values({
+        id,
+        fromUserId,
+        toUserId,
+        type: dbType as 'like' | 'super_like' | 'skip',
+        isRead: false,
+        likeCount,
+        expiresAt,
+        ...(typeStr === 'SUPER_LIKE' && message ? { message } : {}),
+      })
       .onConflictDoUpdate({
         target: [interactions.fromUserId, interactions.toUserId],
-        set: updateData,
+        set: {
+          type: dbType as 'like' | 'super_like' | 'skip',
+          isRead: false,
+          likeCount,
+          expiresAt,
+          createdAt: now,
+          ...(typeStr === 'SUPER_LIKE' && message ? { message } : {}),
+        },
       })
       .returning();
 
