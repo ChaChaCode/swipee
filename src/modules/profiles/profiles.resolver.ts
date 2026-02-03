@@ -1,0 +1,28 @@
+import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { ProfileModel } from './models/profile.model';
+import { ProfilesService } from './profiles.service';
+import { UpdateProfileInput } from './dto/update-profile.input';
+
+@Resolver(() => ProfileModel)
+export class ProfilesResolver {
+  constructor(private profilesService: ProfilesService) {}
+
+  @Query(() => ProfileModel, { nullable: true })
+  async profile(@Args('id', { type: () => ID }) id: string) {
+    return this.profilesService.findById(id);
+  }
+
+  @Query(() => ProfileModel, { nullable: true })
+  async profileByUserId(@Args('userId', { type: () => ID }) userId: string) {
+    return this.profilesService.findByUserId(userId);
+  }
+
+  @Mutation(() => ProfileModel)
+  async updateProfile(
+    @Args('userId', { type: () => ID }) userId: string,
+    @Args('input') input: UpdateProfileInput,
+  ) {
+    const profile = await this.profilesService.findOrCreate(userId);
+    return this.profilesService.update(profile.id, input);
+  }
+}
