@@ -1,5 +1,6 @@
 import { Field, ObjectType, ID, Int } from '@nestjs/graphql';
-export { Gender, LookingFor } from '../../profiles/models/profile.model';
+import { Gender, LookingFor } from '../../profiles/models/profile.model';
+export { Gender, LookingFor };
 
 @ObjectType()
 export class InterestModel {
