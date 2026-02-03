@@ -18,9 +18,26 @@ export interface AuthResult {
   };
   profile: {
     id: string;
+    userId: string;
+    name: string | null;
     bio: string | null;
+    age: number | null;
+    birthDate: Date | null;
+    gender: string | null;
+    lookingFor: string | null;
+    purpose: string | null;
+    city: string | null;
+    latitude: string | null;
+    longitude: string | null;
     photos: string[];
     interests: string[];
+    minAge: number;
+    maxAge: number;
+    maxDistance: number;
+    isVisible: boolean;
+    onboardingCompleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
   } | null;
   isNewUser: boolean;
 }
