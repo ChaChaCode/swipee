@@ -1,5 +1,5 @@
 import { Inject, Injectable, BadRequestException } from '@nestjs/common';
-import { and, eq, gte, or } from 'drizzle-orm';
+import { and, eq, gte, or, sql } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { DRIZZLE } from '../../database/database.module';
 import type { Database } from '../../database/database.module';
@@ -50,43 +50,31 @@ export class InteractionsService {
     }
 
     const id = createId();
-
-    // Build values object
-    const insertValues: Record<string, unknown> = {
-      id,
-      fromUserId,
-      toUserId,
-      type: dbType,
-      isRead: false,
-      likeCount,
-      expiresAt,
-    };
-
-    // Only add message for super_like
-    if (typeStr === 'SUPER_LIKE' && message) {
-      insertValues.message = message;
-    }
-
-    // Build update set
-    const updateSet: Record<string, unknown> = {
-      type: dbType,
-      isRead: false,
-      likeCount,
-      expiresAt,
-      createdAt: now,
-    };
-
-    if (typeStr === 'SUPER_LIKE' && message) {
-      updateSet.message = message;
-    }
+    const messageValue = typeStr === 'SUPER_LIKE' && message ? message : null;
 
     // Upsert interaction
     const result = await this.db
       .insert(interactions)
-      .values(insertValues as typeof interactions.$inferInsert)
+      .values({
+        id,
+        fromUserId,
+        toUserId,
+        type: dbType as 'like' | 'super_like' | 'skip',
+        message: messageValue,
+        isRead: false,
+        likeCount,
+        expiresAt,
+      })
       .onConflictDoUpdate({
         target: [interactions.fromUserId, interactions.toUserId],
-        set: updateSet,
+        set: {
+          type: dbType as 'like' | 'super_like' | 'skip',
+          message: messageValue,
+          isRead: false,
+          likeCount,
+          expiresAt,
+          createdAt: now,
+        },
       })
       .returning();
 
