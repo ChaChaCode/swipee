@@ -1,8 +1,19 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, ne, notInArray, sql, gte, lte, or, isNull, SQL } from 'drizzle-orm';
+import {
+  and,
+  eq,
+  ne,
+  notInArray,
+  sql,
+  gte,
+  lte,
+  or,
+  isNull,
+  SQL,
+} from 'drizzle-orm';
 import { DRIZZLE } from '../../database/database.module';
 import type { Database } from '../../database/database.module';
-import { profiles, swipes } from '../../database/schema';
+import { profiles, interactions, matches } from '../../database/schema';
 
 export interface DiscoveryFilters {
   userId: string;
@@ -16,6 +27,7 @@ export class DiscoveryService {
 
   async getProfilesToDiscover(filters: DiscoveryFilters) {
     const { userId, limit = 10, offset = 0 } = filters;
+    const now = new Date();
 
     // Get current user's profile with preferences
     const currentProfile = await this.db
@@ -30,13 +42,36 @@ export class DiscoveryService {
 
     const myProfile = currentProfile[0];
 
-    // Get IDs of users already swiped by current user
-    const swipedUsers = await this.db
-      .select({ swipedId: swipes.swipedId })
-      .from(swipes)
-      .where(eq(swipes.swiperId, userId));
+    // Get IDs of users with active interactions (expiresAt not yet passed)
+    const interactedUsers = await this.db
+      .select({ toUserId: interactions.toUserId })
+      .from(interactions)
+      .where(
+        and(
+          eq(interactions.fromUserId, userId),
+          gte(interactions.expiresAt, now),
+        ),
+      );
 
-    const swipedUserIds = swipedUsers.map((s) => s.swipedId);
+    const interactedUserIds = interactedUsers.map((i) => i.toUserId);
+
+    // Get IDs of users with active matches or within hiddenUntil period
+    const matchedUsers = await this.db
+      .select()
+      .from(matches)
+      .where(
+        and(
+          or(eq(matches.user1Id, userId), eq(matches.user2Id, userId)),
+          or(eq(matches.isActive, true), gte(matches.hiddenUntil, now)),
+        ),
+      );
+
+    const matchedUserIds = matchedUsers.map((m) =>
+      m.user1Id === userId ? m.user2Id : m.user1Id,
+    );
+
+    // Combine all excluded user IDs
+    const excludedUserIds = [...new Set([...interactedUserIds, ...matchedUserIds])];
 
     // Build conditions
     const conditions: SQL[] = [
@@ -48,9 +83,9 @@ export class DiscoveryService {
       eq(profiles.isVisible, true),
     ];
 
-    // Exclude already swiped users
-    if (swipedUserIds.length > 0) {
-      conditions.push(notInArray(profiles.userId, swipedUserIds));
+    // Exclude already interacted and matched users
+    if (excludedUserIds.length > 0) {
+      conditions.push(notInArray(profiles.userId, excludedUserIds));
     }
 
     // Filter by gender preference (what I'm looking for)
@@ -61,10 +96,14 @@ export class DiscoveryService {
     // Filter by their lookingFor preference (they should be looking for my gender or both)
     if (myProfile.gender) {
       // Map gender to lookingFor compatible value
-      const myGenderForLookingFor = myProfile.gender === 'other' ? 'both' : myProfile.gender;
+      const myGenderForLookingFor =
+        myProfile.gender === 'other' ? 'both' : myProfile.gender;
       conditions.push(
         or(
-          eq(profiles.lookingFor, myGenderForLookingFor as 'male' | 'female' | 'both'),
+          eq(
+            profiles.lookingFor,
+            myGenderForLookingFor as 'male' | 'female' | 'both',
+          ),
           eq(profiles.lookingFor, 'both'),
           isNull(profiles.lookingFor),
         )!,
@@ -148,10 +187,10 @@ export class DiscoveryService {
   }
 
   async getDiscoveryCount(userId: string): Promise<number> {
-    const profiles = await this.getProfilesToDiscover({
+    const profilesList = await this.getProfilesToDiscover({
       userId,
       limit: 1000,
     });
-    return profiles.length;
+    return profilesList.length;
   }
 }

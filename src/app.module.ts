@@ -5,9 +5,9 @@ import { GraphqlModule } from './graphql';
 import { AuthModule } from './modules/auth';
 import { UsersModule } from './modules/users';
 import { ProfilesModule } from './modules/profiles';
-import { SwipesModule } from './modules/swipes';
+import { InteractionsModule } from './modules/interactions';
 import { MatchesModule } from './modules/matches';
-import { MessagesModule } from './modules/messages';
+import { NotificationsModule } from './modules/notifications';
 import { UploadModule } from './modules/upload';
 import { OnboardingModule } from './modules/onboarding';
 import { DiscoveryModule } from './modules/discovery';
@@ -23,9 +23,9 @@ import { DiscoveryModule } from './modules/discovery';
     AuthModule,
     UsersModule,
     ProfilesModule,
-    SwipesModule,
+    InteractionsModule,
     MatchesModule,
-    MessagesModule,
+    NotificationsModule,
     UploadModule,
     OnboardingModule,
     DiscoveryModule,

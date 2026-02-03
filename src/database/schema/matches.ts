@@ -12,6 +12,9 @@ export const matches = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     isActive: boolean('is_active').default(true),
+    user1Notified: boolean('user1_notified').default(false),
+    user2Notified: boolean('user2_notified').default(false),
+    hiddenUntil: timestamp('hidden_until'), // 2 days after match - don't show in feed
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at').defaultNow().notNull(),
   },

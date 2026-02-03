@@ -22,6 +22,21 @@ export class MatchModel {
   isActive: boolean;
 
   @Field()
+  user1Notified: boolean;
+
+  @Field()
+  user2Notified: boolean;
+
+  @Field({ nullable: true })
+  hiddenUntil?: Date;
+
+  @Field({ nullable: true })
+  user1TelegramUsername?: string;
+
+  @Field({ nullable: true })
+  user2TelegramUsername?: string;
+
+  @Field()
   createdAt: Date;
 
   @Field()
