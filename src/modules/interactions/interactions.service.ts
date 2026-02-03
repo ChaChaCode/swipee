@@ -15,8 +15,11 @@ export class InteractionsService {
   async create(input: CreateInteractionInput) {
     const { fromUserId, toUserId, type, message } = input;
 
+    // Map enum to database value
+    const typeStr = String(type).toUpperCase();
+
     // Validate super_like has message
-    if (type === InteractionType.SUPER_LIKE && !message) {
+    if (typeStr === 'SUPER_LIKE' && !message) {
       throw new BadRequestException('Super like requires a message');
     }
 
@@ -33,21 +36,16 @@ export class InteractionsService {
 
     // Calculate expiresAt (24 hours from now)
     const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
-    // Map enum to database value
     const dbType =
-      type === InteractionType.LIKE
+      typeStr === 'LIKE'
         ? 'like'
-        : type === InteractionType.SUPER_LIKE
+        : typeStr === 'SUPER_LIKE'
           ? 'super_like'
           : 'skip';
 
     // Calculate likeCount
     let likeCount = 1;
-    if (
-      existing &&
-      (type === InteractionType.LIKE || type === InteractionType.SUPER_LIKE)
-    ) {
+    if (existing && (typeStr === 'LIKE' || typeStr === 'SUPER_LIKE')) {
       likeCount = existing.likeCount + 1;
     }
 
@@ -61,7 +59,7 @@ export class InteractionsService {
         fromUserId,
         toUserId,
         type: dbType,
-        message: type === InteractionType.SUPER_LIKE ? message : null,
+        message: typeStr === 'SUPER_LIKE' ? message : null,
         isRead: false,
         likeCount,
         expiresAt,
@@ -70,7 +68,7 @@ export class InteractionsService {
         target: [interactions.fromUserId, interactions.toUserId],
         set: {
           type: dbType,
-          message: type === InteractionType.SUPER_LIKE ? message : null,
+          message: typeStr === 'SUPER_LIKE' ? message : null,
           isRead: false,
           likeCount,
           expiresAt,
