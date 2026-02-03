@@ -47,4 +47,10 @@ export class UpdateProfileInput {
 
   @Field(() => Int, { nullable: true })
   maxDistance?: number;
+
+  @Field({ nullable: true })
+  isVisible?: boolean;
+
+  @Field({ nullable: true })
+  onboardingCompleted?: boolean;
 }
