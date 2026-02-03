@@ -49,6 +49,42 @@ export class AuthService {
     return this.processAuth(telegramData);
   }
 
+  async authenticateTestUser(telegramId: number): Promise<AuthResult | null> {
+    // Find existing user by telegramId
+    const user = await this.usersService.findByTelegramId(telegramId);
+
+    if (!user) {
+      return null;
+    }
+
+    // Get profile
+    const profile = await this.profilesService.findByUserId(user.id);
+
+    return {
+      user: {
+        id: user.id,
+        telegramId: user.telegramId,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        languageCode: user.languageCode,
+        isPremium: user.isPremium,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      profile: profile
+        ? {
+            id: profile.id,
+            bio: profile.bio,
+            photos: (profile.photos as string[]) || [],
+            interests: (profile.interests as string[]) || [],
+          }
+        : null,
+      isNewUser: false,
+    };
+  }
+
   private async processAuth(telegramData: TelegramInitData): Promise<AuthResult> {
     const { user: tgUser } = telegramData;
 

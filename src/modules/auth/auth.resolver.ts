@@ -38,6 +38,27 @@ export class AuthResolver {
     };
   }
 
+  @Mutation(() => AuthPayload, { description: 'Auth test user by telegramId (dev only)' })
+  async authTestUser(
+    @Args('telegramId', { type: () => String }) telegramId: string,
+  ): Promise<AuthPayload> {
+    if (process.env.NODE_ENV === 'production') {
+      throw new UnauthorizedException('Not available in production');
+    }
+
+    const result = await this.authService.authenticateTestUser(Number(telegramId));
+
+    if (!result) {
+      throw new UnauthorizedException('Test user not found');
+    }
+
+    return {
+      user: result.user as UserModel,
+      profile: result.profile as any,
+      isNewUser: result.isNewUser,
+    };
+  }
+
   @Query(() => UserModel, { nullable: true })
   async me(@Context() context: { req: { headers: { authorization?: string } } }) {
     const authHeader = context.req.headers.authorization;
