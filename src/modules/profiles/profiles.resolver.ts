@@ -1,4 +1,5 @@
 import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { BadRequestException } from '@nestjs/common';
 import { ProfileModel } from './models/profile.model';
 import { ProfilesService } from './profiles.service';
 import { UpdateProfileInput } from './dto/update-profile.input';
@@ -23,6 +24,12 @@ export class ProfilesResolver {
     @Args('input') input: UpdateProfileInput,
   ) {
     const profile = await this.profilesService.findOrCreate(userId);
+
+    // После онбординга нельзя менять пол
+    if (profile.onboardingCompleted && input.gender !== undefined) {
+      throw new BadRequestException('Cannot change gender after onboarding');
+    }
+
     return this.profilesService.update(profile.id, input);
   }
 }

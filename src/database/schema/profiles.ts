@@ -11,6 +11,13 @@ import { users } from './users';
 
 export const genderEnum = pgEnum('gender', ['male', 'female', 'other']);
 export const lookingForEnum = pgEnum('looking_for', ['male', 'female', 'both']);
+export const purposeEnum = pgEnum('purpose', [
+  'dating',
+  'relationship',
+  'friendship',
+  'chatting',
+  'adult',
+]);
 
 export const profiles = pgTable('profiles', {
   id: text('id').primaryKey(), // cuid2
@@ -28,6 +35,7 @@ export const profiles = pgTable('profiles', {
   // Gender & preferences
   gender: genderEnum('gender'),
   lookingFor: lookingForEnum('looking_for'),
+  purpose: purposeEnum('purpose'),
 
   // Location
   city: text('city'),

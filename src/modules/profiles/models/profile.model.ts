@@ -13,8 +13,20 @@ export enum LookingFor {
   BOTH = 'both',
 }
 
+export enum Purpose {
+  DATING = 'dating',
+  RELATIONSHIP = 'relationship',
+  FRIENDSHIP = 'friendship',
+  CHATTING = 'chatting',
+  ADULT = 'adult',
+}
+
 registerEnumType(Gender, { name: 'Gender' });
 registerEnumType(LookingFor, { name: 'LookingFor' });
+registerEnumType(Purpose, {
+  name: 'Purpose',
+  description: 'What the user is looking for in the app',
+});
 
 @ObjectType()
 export class ProfileModel {
@@ -44,6 +56,9 @@ export class ProfileModel {
 
   @Field(() => LookingFor, { nullable: true })
   lookingFor?: LookingFor;
+
+  @Field(() => Purpose, { nullable: true })
+  purpose?: Purpose;
 
   @Field({ nullable: true })
   city?: string;

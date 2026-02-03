@@ -1,5 +1,5 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import { Gender, LookingFor } from '../models/profile.model';
+import { Gender, LookingFor, Purpose } from '../models/profile.model';
 
 @InputType()
 export class UpdateProfileInput {
@@ -20,6 +20,9 @@ export class UpdateProfileInput {
 
   @Field(() => LookingFor, { nullable: true })
   lookingFor?: LookingFor;
+
+  @Field(() => Purpose, { nullable: true })
+  purpose?: Purpose;
 
   @Field({ nullable: true })
   city?: string;

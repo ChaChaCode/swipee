@@ -6,7 +6,7 @@ import type { Database } from '../../database/database.module';
 import { interactions, profiles } from '../../database/schema';
 import { CreateInteractionInput } from './dto/create-interaction.input';
 import { InteractionType } from './models/interaction.model';
-import { Gender, LookingFor } from '../profiles/models/profile.model';
+import { Gender, LookingFor, Purpose } from '../profiles/models/profile.model';
 
 @Injectable()
 export class InteractionsService {
@@ -222,6 +222,24 @@ export class InteractionsService {
       }
     };
 
+    const mapPurpose = (p: string | null): Purpose | undefined => {
+      if (!p) return undefined;
+      switch (p) {
+        case 'dating':
+          return Purpose.DATING;
+        case 'relationship':
+          return Purpose.RELATIONSHIP;
+        case 'friendship':
+          return Purpose.FRIENDSHIP;
+        case 'chatting':
+          return Purpose.CHATTING;
+        case 'adult':
+          return Purpose.ADULT;
+        default:
+          return undefined;
+      }
+    };
+
     return {
       id: profile.id,
       userId: profile.userId,
@@ -231,6 +249,7 @@ export class InteractionsService {
       birthDate: profile.birthDate ?? undefined,
       gender: mapGender(profile.gender),
       lookingFor: mapLookingFor(profile.lookingFor),
+      purpose: mapPurpose(profile.purpose),
       city: profile.city ?? undefined,
       latitude: profile.latitude ?? undefined,
       longitude: profile.longitude ?? undefined,
