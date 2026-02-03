@@ -65,4 +65,12 @@ export class ProfilesResolver {
 
     return this.profilesService.update(profile.id, updateData);
   }
+
+  @Mutation(() => Boolean)
+  async deleteProfile(
+    @Args('userId', { type: () => ID }) userId: string,
+  ): Promise<boolean> {
+    const result = await this.profilesService.deleteByUserId(userId);
+    return result !== null;
+  }
 }

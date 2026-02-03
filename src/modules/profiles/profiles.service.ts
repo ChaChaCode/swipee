@@ -59,4 +59,20 @@ export class ProfilesService {
     if (existing) return existing;
     return this.create(userId);
   }
+
+  async delete(id: string) {
+    const result = await this.db
+      .delete(profiles)
+      .where(eq(profiles.id, id))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  async deleteByUserId(userId: string) {
+    const result = await this.db
+      .delete(profiles)
+      .where(eq(profiles.userId, userId))
+      .returning();
+    return result[0] ?? null;
+  }
 }
