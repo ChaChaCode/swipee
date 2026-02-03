@@ -90,15 +90,34 @@ export class AuthService {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
-      profile: profile
-        ? {
-            id: profile.id,
-            bio: profile.bio,
-            photos: (profile.photos as string[]) || [],
-            interests: (profile.interests as string[]) || [],
-          }
-        : null,
+      profile: profile ? this.mapProfile(profile) : null,
       isNewUser: false,
+    };
+  }
+
+  private mapProfile(profile: NonNullable<Awaited<ReturnType<typeof this.profilesService.findByUserId>>>) {
+    return {
+      id: profile.id,
+      userId: profile.userId,
+      name: profile.name,
+      bio: profile.bio,
+      age: profile.age,
+      birthDate: profile.birthDate,
+      gender: profile.gender,
+      lookingFor: profile.lookingFor,
+      purpose: profile.purpose,
+      city: profile.city,
+      latitude: profile.latitude,
+      longitude: profile.longitude,
+      photos: (profile.photos as string[]) || [],
+      interests: (profile.interests as string[]) || [],
+      minAge: profile.minAge ?? 18,
+      maxAge: profile.maxAge ?? 100,
+      maxDistance: profile.maxDistance ?? 50,
+      isVisible: profile.isVisible ?? true,
+      onboardingCompleted: profile.onboardingCompleted ?? false,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
     };
   }
 
@@ -143,14 +162,7 @@ export class AuthService {
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
-      profile: profile
-        ? {
-            id: profile.id,
-            bio: profile.bio,
-            photos: (profile.photos as string[]) || [],
-            interests: (profile.interests as string[]) || [],
-          }
-        : null,
+      profile: profile ? this.mapProfile(profile) : null,
       isNewUser,
     };
   }
