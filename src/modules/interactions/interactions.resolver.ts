@@ -16,7 +16,7 @@ export class InteractionsResolver {
 
   @Mutation(() => InteractionResultModel)
   async createInteraction(
-    @Args('input') input: CreateInteractionInput,
+    @Args('input', { type: () => CreateInteractionInput }) input: CreateInteractionInput,
   ): Promise<InteractionResultModel> {
     const interaction = await this.interactionsService.create(input);
 
