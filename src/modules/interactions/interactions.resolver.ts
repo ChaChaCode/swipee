@@ -1,5 +1,5 @@
 import { Resolver, Mutation, Args, Query, ID, Int } from '@nestjs/graphql';
-import { InteractionModel } from './models/interaction.model';
+import { InteractionModel, InteractionType } from './models/interaction.model';
 import { InteractionResultModel } from './models/interaction-result.model';
 import { LikeReceivedModel } from './models/like-received.model';
 import { SuperLikeReceivedModel } from './models/super-like-received.model';
@@ -16,42 +16,48 @@ export class InteractionsResolver {
 
   @Mutation(() => InteractionResultModel)
   async createInteraction(
-    @Args('input', { type: () => CreateInteractionInput }) input: CreateInteractionInput,
+    @Args('fromUserId', { type: () => ID }) fromUserId: string,
+    @Args('toUserId', { type: () => ID }) toUserId: string,
+    @Args('type', { type: () => InteractionType }) type: InteractionType,
+    @Args('message', { type: () => String, nullable: true }) message?: string,
   ): Promise<InteractionResultModel> {
+    const input = { fromUserId, toUserId, type, message };
+    console.log('=== ARGS ===', { fromUserId, toUserId, type, message });
     const interaction = await this.interactionsService.create(input);
 
     let isMatch = false;
     let match = null;
 
     // Check for match (if like or super_like)
-    if (input.type === 'like' || input.type === 'super_like') {
+    const typeStr = String(type).toUpperCase();
+    if (typeStr === 'LIKE' || typeStr === 'SUPER_LIKE') {
       const isMutual = await this.interactionsService.checkMutualLike(
-        input.fromUserId,
-        input.toUserId,
+        fromUserId,
+        toUserId,
       );
 
       if (isMutual) {
         // Check if match already exists
         const existingMatch = await this.matchesService.findMatch(
-          input.fromUserId,
-          input.toUserId,
+          fromUserId,
+          toUserId,
         );
 
         if (!existingMatch || !existingMatch.isActive) {
           match = await this.matchesService.create(
-            input.fromUserId,
-            input.toUserId,
+            fromUserId,
+            toUserId,
           );
           isMatch = true;
 
           // Reset like counts for both directions
           await this.interactionsService.resetLikeCount(
-            input.fromUserId,
-            input.toUserId,
+            fromUserId,
+            toUserId,
           );
           await this.interactionsService.resetLikeCount(
-            input.toUserId,
-            input.fromUserId,
+            toUserId,
+            fromUserId,
           );
         }
       }
