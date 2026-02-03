@@ -1,9 +1,19 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
+import morgan from 'morgan';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Request logging
+  app.use(
+    morgan(':method :url :status :response-time ms', {
+      stream: {
+        write: (message: string) => Logger.log(message.trim(), 'HTTP'),
+      },
+    }),
+  );
 
   // Enable validation
   app.useGlobalPipes(
