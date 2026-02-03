@@ -51,29 +51,42 @@ export class InteractionsService {
 
     const id = createId();
 
+    // Build values object
+    const insertValues: Record<string, unknown> = {
+      id,
+      fromUserId,
+      toUserId,
+      type: dbType,
+      isRead: false,
+      likeCount,
+      expiresAt,
+    };
+
+    // Only add message for super_like
+    if (typeStr === 'SUPER_LIKE' && message) {
+      insertValues.message = message;
+    }
+
+    // Build update set
+    const updateSet: Record<string, unknown> = {
+      type: dbType,
+      isRead: false,
+      likeCount,
+      expiresAt,
+      createdAt: now,
+    };
+
+    if (typeStr === 'SUPER_LIKE' && message) {
+      updateSet.message = message;
+    }
+
     // Upsert interaction
     const result = await this.db
       .insert(interactions)
-      .values({
-        id,
-        fromUserId,
-        toUserId,
-        type: dbType,
-        message: typeStr === 'SUPER_LIKE' ? message : null,
-        isRead: false,
-        likeCount,
-        expiresAt,
-      })
+      .values(insertValues as typeof interactions.$inferInsert)
       .onConflictDoUpdate({
         target: [interactions.fromUserId, interactions.toUserId],
-        set: {
-          type: dbType,
-          message: typeStr === 'SUPER_LIKE' ? message : null,
-          isRead: false,
-          likeCount,
-          expiresAt,
-          createdAt: now,
-        },
+        set: updateSet,
       })
       .returning();
 
