@@ -23,6 +23,8 @@ export class ProfilesResolver {
     @Args('userId', { type: () => ID }) userId: string,
     @Args('input') input: UpdateProfileInput,
   ) {
+    console.log('updateProfile input:', JSON.stringify(input, null, 2));
+
     const profile = await this.profilesService.findOrCreate(userId);
 
     // После онбординга нельзя менять пол
@@ -30,6 +32,8 @@ export class ProfilesResolver {
       throw new BadRequestException('Cannot change gender after onboarding');
     }
 
-    return this.profilesService.update(profile.id, input);
+    const result = await this.profilesService.update(profile.id, input);
+    console.log('updateProfile result:', JSON.stringify(result, null, 2));
+    return result;
   }
 }
