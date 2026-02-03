@@ -1,8 +1,7 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Int } from '@nestjs/graphql';
 import { BadRequestException } from '@nestjs/common';
-import { ProfileModel } from './models/profile.model';
+import { ProfileModel, Gender, LookingFor, Purpose } from './models/profile.model';
 import { ProfilesService } from './profiles.service';
-import { UpdateProfileInput } from './dto/update-profile.input';
 
 @Resolver(() => ProfileModel)
 export class ProfilesResolver {
@@ -21,19 +20,49 @@ export class ProfilesResolver {
   @Mutation(() => ProfileModel)
   async updateProfile(
     @Args('userId', { type: () => ID }) userId: string,
-    @Args('input', { type: () => UpdateProfileInput }) input: UpdateProfileInput,
+    @Args('name', { type: () => String, nullable: true }) name?: string,
+    @Args('bio', { type: () => String, nullable: true }) bio?: string,
+    @Args('birthDate', { type: () => Date, nullable: true }) birthDate?: Date,
+    @Args('gender', { type: () => Gender, nullable: true }) gender?: Gender,
+    @Args('lookingFor', { type: () => LookingFor, nullable: true }) lookingFor?: LookingFor,
+    @Args('purpose', { type: () => Purpose, nullable: true }) purpose?: Purpose,
+    @Args('city', { type: () => String, nullable: true }) city?: string,
+    @Args('latitude', { type: () => String, nullable: true }) latitude?: string,
+    @Args('longitude', { type: () => String, nullable: true }) longitude?: string,
+    @Args('photos', { type: () => [String], nullable: true }) photos?: string[],
+    @Args('interests', { type: () => [String], nullable: true }) interests?: string[],
+    @Args('minAge', { type: () => Int, nullable: true }) minAge?: number,
+    @Args('maxAge', { type: () => Int, nullable: true }) maxAge?: number,
+    @Args('maxDistance', { type: () => Int, nullable: true }) maxDistance?: number,
+    @Args('isVisible', { type: () => Boolean, nullable: true }) isVisible?: boolean,
+    @Args('onboardingCompleted', { type: () => Boolean, nullable: true }) onboardingCompleted?: boolean,
   ) {
-    console.log('updateProfile input:', JSON.stringify(input, null, 2));
-
     const profile = await this.profilesService.findOrCreate(userId);
 
     // После онбординга нельзя менять пол
-    if (profile.onboardingCompleted && input.gender !== undefined) {
+    if (profile.onboardingCompleted && gender !== undefined) {
       throw new BadRequestException('Cannot change gender after onboarding');
     }
 
-    const result = await this.profilesService.update(profile.id, input);
-    console.log('updateProfile result:', JSON.stringify(result, null, 2));
-    return result;
+    // Собираем только переданные поля
+    const updateData: Record<string, unknown> = {};
+    if (name !== undefined) updateData.name = name;
+    if (bio !== undefined) updateData.bio = bio;
+    if (birthDate !== undefined) updateData.birthDate = birthDate;
+    if (gender !== undefined) updateData.gender = gender;
+    if (lookingFor !== undefined) updateData.lookingFor = lookingFor;
+    if (purpose !== undefined) updateData.purpose = purpose;
+    if (city !== undefined) updateData.city = city;
+    if (latitude !== undefined) updateData.latitude = latitude;
+    if (longitude !== undefined) updateData.longitude = longitude;
+    if (photos !== undefined) updateData.photos = photos;
+    if (interests !== undefined) updateData.interests = interests;
+    if (minAge !== undefined) updateData.minAge = minAge;
+    if (maxAge !== undefined) updateData.maxAge = maxAge;
+    if (maxDistance !== undefined) updateData.maxDistance = maxDistance;
+    if (isVisible !== undefined) updateData.isVisible = isVisible;
+    if (onboardingCompleted !== undefined) updateData.onboardingCompleted = onboardingCompleted;
+
+    return this.profilesService.update(profile.id, updateData);
   }
 }
