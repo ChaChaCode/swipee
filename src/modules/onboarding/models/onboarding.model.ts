@@ -1,19 +1,5 @@
-import { Field, ObjectType, ID, Int, registerEnumType } from '@nestjs/graphql';
-
-export enum Gender {
-  MALE = 'male',
-  FEMALE = 'female',
-  OTHER = 'other',
-}
-
-export enum LookingFor {
-  MALE = 'male',
-  FEMALE = 'female',
-  BOTH = 'both',
-}
-
-registerEnumType(Gender, { name: 'Gender' });
-registerEnumType(LookingFor, { name: 'LookingFor' });
+import { Field, ObjectType, ID, Int } from '@nestjs/graphql';
+import { Gender, LookingFor } from '../../profiles/models/profile.model';
 
 @ObjectType()
 export class InterestModel {
