@@ -27,13 +27,12 @@ export class InteractionsService {
     const existing = await this.findInteraction(fromUserId, toUserId);
     const now = new Date();
 
-    // TODO: ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ТЕСТИРОВАНИЯ ФРОНТЕНДА
     // Check cooldown (24 hours)
-    // if (existing && existing.expiresAt > now) {
-    //   throw new BadRequestException(
-    //     'Cannot interact yet. Please wait 24 hours.',
-    //   );
-    // }
+    if (existing && existing.expiresAt > now) {
+      throw new BadRequestException(
+        'Cannot interact yet. Please wait 24 hours.',
+      );
+    }
 
     // Calculate expiresAt (24 hours from now)
     const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);

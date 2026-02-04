@@ -42,37 +42,36 @@ export class DiscoveryService {
 
     const myProfile = currentProfile[0];
 
-    // TODO: ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ТЕСТИРОВАНИЯ ФРОНТЕНДА
     // Get IDs of users with active interactions (expiresAt not yet passed)
-    // const interactedUsers = await this.db
-    //   .select({ toUserId: interactions.toUserId })
-    //   .from(interactions)
-    //   .where(
-    //     and(
-    //       eq(interactions.fromUserId, userId),
-    //       gte(interactions.expiresAt, now),
-    //     ),
-    //   );
+    const interactedUsers = await this.db
+      .select({ toUserId: interactions.toUserId })
+      .from(interactions)
+      .where(
+        and(
+          eq(interactions.fromUserId, userId),
+          gte(interactions.expiresAt, now),
+        ),
+      );
 
-    // const interactedUserIds = interactedUsers.map((i) => i.toUserId);
+    const interactedUserIds = interactedUsers.map((i) => i.toUserId);
 
     // Get IDs of users with active matches or within hiddenUntil period
-    // const matchedUsers = await this.db
-    //   .select()
-    //   .from(matches)
-    //   .where(
-    //     and(
-    //       or(eq(matches.user1Id, userId), eq(matches.user2Id, userId)),
-    //       or(eq(matches.isActive, true), gte(matches.hiddenUntil, now)),
-    //     ),
-    //   );
+    const matchedUsers = await this.db
+      .select()
+      .from(matches)
+      .where(
+        and(
+          or(eq(matches.user1Id, userId), eq(matches.user2Id, userId)),
+          or(eq(matches.isActive, true), gte(matches.hiddenUntil, now)),
+        ),
+      );
 
-    // const matchedUserIds = matchedUsers.map((m) =>
-    //   m.user1Id === userId ? m.user2Id : m.user1Id,
-    // );
+    const matchedUserIds = matchedUsers.map((m) =>
+      m.user1Id === userId ? m.user2Id : m.user1Id,
+    );
 
     // Combine all excluded user IDs
-    const excludedUserIds: string[] = []; // ВРЕМЕННО ПУСТОЙ
+    const excludedUserIds = [...new Set([...interactedUserIds, ...matchedUserIds])];
 
     // Build conditions
     const conditions: SQL[] = [
