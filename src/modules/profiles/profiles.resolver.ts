@@ -1,11 +1,17 @@
-import { Resolver, Query, Mutation, Args, ID, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Int, ResolveField, Parent } from '@nestjs/graphql';
 import { BadRequestException } from '@nestjs/common';
 import { ProfileModel, Gender, LookingFor, Purpose } from './models/profile.model';
+import { PhotoModel, toPhotoModels } from './models/photo.model';
 import { ProfilesService } from './profiles.service';
 
 @Resolver(() => ProfileModel)
 export class ProfilesResolver {
   constructor(private profilesService: ProfilesService) {}
+
+  @ResolveField(() => [PhotoModel])
+  photos(@Parent() profile: { photos: string[] | null }): PhotoModel[] {
+    return toPhotoModels(profile.photos);
+  }
 
   @Query(() => ProfileModel, { nullable: true })
   async profile(@Args('id', { type: () => ID }) id: string) {

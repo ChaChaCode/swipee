@@ -1,5 +1,6 @@
 import { Field, ObjectType, ID, Int, Float } from '@nestjs/graphql';
 import { Gender, LookingFor } from '../../profiles/models/profile.model';
+import { PhotoModel } from '../../profiles/models/photo.model';
 
 @ObjectType()
 export class DiscoveryProfile {
@@ -27,8 +28,8 @@ export class DiscoveryProfile {
   @Field({ nullable: true })
   city?: string;
 
-  @Field(() => [String])
-  photos: string[];
+  @Field(() => [PhotoModel])
+  photos: PhotoModel[];
 
   @Field(() => [String])
   interests: string[];

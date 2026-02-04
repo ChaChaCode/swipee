@@ -1,5 +1,6 @@
 import { Field, ObjectType, ID, Int, registerEnumType } from '@nestjs/graphql';
 import { UserModel } from '../../users/models/user.model';
+import { PhotoModel } from './photo.model';
 
 export enum Gender {
   MALE = 'male',
@@ -69,8 +70,8 @@ export class ProfileModel {
   @Field({ nullable: true })
   longitude?: string;
 
-  @Field(() => [String])
-  photos: string[];
+  @Field(() => [PhotoModel])
+  photos: PhotoModel[];
 
   @Field(() => [String])
   interests: string[];

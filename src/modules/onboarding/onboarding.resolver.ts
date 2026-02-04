@@ -7,6 +7,7 @@ import {
   Gender,
   LookingFor,
 } from './models/onboarding.model';
+import { toPhotoModels } from '../profiles/models/photo.model';
 import {
   SetNameInput,
   SetBioInput,
@@ -37,7 +38,7 @@ export class OnboardingResolver {
       age: profile.age ?? undefined,
       gender: profile.gender as Gender | undefined,
       lookingFor: profile.lookingFor as LookingFor | undefined,
-      photos: (profile.photos as string[]) || [],
+      photos: toPhotoModels(profile.photos as string[]),
       interests: (profile.interests as string[]) || [],
       city: profile.city ?? undefined,
       latitude: profile.latitude ?? undefined,
@@ -193,7 +194,7 @@ export class OnboardingResolver {
       age: profile.age ?? undefined,
       gender: profile.gender as Gender | undefined,
       lookingFor: profile.lookingFor as LookingFor | undefined,
-      photos: (profile.photos as string[]) || [],
+      photos: toPhotoModels(profile.photos as string[]),
       interests: (profile.interests as string[]) || [],
       city: profile.city ?? undefined,
       latitude: profile.latitude ?? undefined,

@@ -213,7 +213,10 @@ query GetProfile($id: ID!) {
     gender
     lookingFor
     purpose
-    photos
+    photos {
+      url
+      position
+    }
     onboardingCompleted
   }
 }
@@ -238,7 +241,10 @@ query GetProfileByUserId($userId: ID!) {
     lookingFor
     purpose
     city
-    photos
+    photos {
+      url
+      position
+    }
     interests
     minAge
     maxAge
@@ -319,7 +325,7 @@ mutation UpdateProfile(
 | `city` | String | Город |
 | `latitude` | String | Широта |
 | `longitude` | String | Долгота |
-| `photos` | [String!] | Фотографии (1-6) |
+| `photos` | [Photo] | Фотографии с позициями (1-6) |
 | `interests` | [String!] | Теги/интересы |
 | `minAge` | Int | Мин. возраст в фильтре |
 | `maxAge` | Int | Макс. возраст в фильтре |
@@ -588,7 +594,10 @@ query OnboardingProfile($userId: String!) {
     age
     gender
     lookingFor
-    photos
+    photos {
+      url
+      position
+    }
     interests
     city
     latitude
@@ -1012,7 +1021,10 @@ query Discover($userId: String!, $limit: Int, $offset: Int, $excludeIds: [String
       gender
       lookingFor
       city
-      photos
+      photos {
+        url
+        position
+      }
       interests
       distance
     }
@@ -1045,7 +1057,7 @@ query Discover($userId: String!, $limit: Int, $offset: Int, $excludeIds: [String
 | `gender` | Gender | Пол |
 | `lookingFor` | LookingFor | Кого ищет |
 | `city` | String | Город |
-| `photos` | [String] | Фотографии |
+| `photos` | [Photo] | Фотографии с позициями |
 | `interests` | [String] | Интересы |
 | `distance` | Float | Расстояние в км |
 
@@ -1386,6 +1398,25 @@ enum InteractionType {
   LIKE
   SUPER_LIKE
   SKIP
+}
+```
+
+### Photo
+```graphql
+type Photo {
+  url: String!       # URL фотографии
+  position: Int!     # Позиция (0 = главное фото)
+}
+```
+
+Фотографии везде возвращаются как массив объектов `Photo` с позицией:
+```json
+{
+  "photos": [
+    { "url": "https://...", "position": 0 },
+    { "url": "https://...", "position": 1 },
+    { "url": "https://...", "position": 2 }
+  ]
 }
 ```
 

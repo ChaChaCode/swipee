@@ -1,6 +1,7 @@
 import { Resolver, Query, Args, Int } from '@nestjs/graphql';
 import { DiscoveryService } from './discovery.service';
 import { DiscoveryProfile, DiscoveryResult } from './models/discovery.model';
+import { toPhotoModels } from '../profiles/models/photo.model';
 
 @Resolver()
 export class DiscoveryResolver {
@@ -33,7 +34,7 @@ export class DiscoveryResolver {
         gender: p.gender as any,
         lookingFor: p.lookingFor as any,
         city: p.city ?? undefined,
-        photos: (p.photos as string[]) || [],
+        photos: toPhotoModels(p.photos as string[]),
         interests: (p.interests as string[]) || [],
         distance: p.distance !== null ? Math.round(Number(p.distance) * 10) / 10 : undefined,
       })),
@@ -65,7 +66,7 @@ export class DiscoveryResolver {
       gender: p.gender as any,
       lookingFor: p.lookingFor as any,
       city: p.city ?? undefined,
-      photos: (p.photos as string[]) || [],
+      photos: toPhotoModels(p.photos as string[]),
       interests: (p.interests as string[]) || [],
       distance: p.distance !== null ? Math.round(Number(p.distance) * 10) / 10 : undefined,
     }));
