@@ -398,6 +398,120 @@ mutation DeletePhoto($key: String!) {
 
 ---
 
+## Управление фотографиями в профиле
+
+Фотографии хранятся как упорядоченный массив. Индекс в массиве = позиция фото (0 = первое, 1 = второе и т.д.).
+
+### Mutation: `addPhoto`
+
+Добавить фотографию на определенную позицию.
+
+```graphql
+mutation AddPhoto($userId: ID!, $photoUrl: String!, $position: Int) {
+  addPhoto(userId: $userId, photoUrl: $photoUrl, position: $position) {
+    id
+    photos
+  }
+}
+```
+
+**Параметры:**
+- `userId` - ID пользователя
+- `photoUrl` - URL фотографии
+- `position` - позиция (0-based, опционально). Если не указана - добавляется в конец
+
+**Ограничения:**
+- Максимум 6 фотографий
+- Фото не должно уже существовать в профиле
+
+---
+
+### Mutation: `removePhoto`
+
+Удалить фотографию из профиля (по URL или позиции).
+
+```graphql
+mutation RemovePhoto($userId: ID!, $photoUrl: String, $position: Int) {
+  removePhoto(userId: $userId, photoUrl: $photoUrl, position: $position) {
+    id
+    photos
+  }
+}
+```
+
+**Параметры (один из двух):**
+- `photoUrl` - URL фотографии для удаления
+- `position` - позиция фотографии (0-based)
+
+---
+
+### Mutation: `reorderPhotos`
+
+Установить новый порядок всех фотографий.
+
+```graphql
+mutation ReorderPhotos($userId: ID!, $photoUrls: [String!]!) {
+  reorderPhotos(userId: $userId, photoUrls: $photoUrls) {
+    id
+    photos
+  }
+}
+```
+
+**Параметры:**
+- `userId` - ID пользователя
+- `photoUrls` - массив URL в новом порядке (должен содержать все текущие фото)
+
+**Пример:**
+```javascript
+// Было: [photo1, photo2, photo3]
+// Стало: [photo3, photo1, photo2]
+await client.mutate({
+  mutation: REORDER_PHOTOS,
+  variables: {
+    userId: currentUserId,
+    photoUrls: ['photo3_url', 'photo1_url', 'photo2_url']
+  }
+});
+```
+
+---
+
+### Mutation: `movePhoto`
+
+Переместить фотографию с одной позиции на другую.
+
+```graphql
+mutation MovePhoto($userId: ID!, $fromPosition: Int!, $toPosition: Int!) {
+  movePhoto(userId: $userId, fromPosition: $fromPosition, toPosition: $toPosition) {
+    id
+    photos
+  }
+}
+```
+
+**Параметры:**
+- `userId` - ID пользователя
+- `fromPosition` - текущая позиция (0-based)
+- `toPosition` - новая позиция (0-based)
+
+**Пример:**
+```javascript
+// Переместить первое фото на третью позицию
+// Было: [A, B, C, D] (позиции: 0, 1, 2, 3)
+// После movePhoto(0, 2): [B, C, A, D]
+await client.mutate({
+  mutation: MOVE_PHOTO,
+  variables: {
+    userId: currentUserId,
+    fromPosition: 0,
+    toPosition: 2
+  }
+});
+```
+
+---
+
 ### Полный флоу загрузки фотографии
 
 ```javascript
@@ -421,13 +535,13 @@ await fetch(uploadUrl, {
   }
 });
 
-// 3. Добавить URL в профиль
-const currentPhotos = profile.photos || [];
+// 3. Добавить фото в профиль (в конец или на конкретную позицию)
 await client.mutate({
-  mutation: UPDATE_PROFILE,
+  mutation: ADD_PHOTO,
   variables: {
     userId: currentUserId,
-    photos: [...currentPhotos, publicUrl]
+    photoUrl: publicUrl,
+    position: 0  // Сделать главным фото (опционально)
   }
 });
 ```
@@ -435,24 +549,23 @@ await client.mutate({
 ### Удаление фотографии из профиля
 
 ```javascript
-// 1. Получить key из URL (последняя часть пути)
 const photoUrl = 'https://storage.yandexcloud.net/swipee/photos/userId/abc123.jpg';
 const key = 'photos/userId/abc123.jpg'; // Извлечь из URL
+
+// 1. Удалить из профиля (по URL или позиции)
+await client.mutate({
+  mutation: REMOVE_PHOTO,
+  variables: {
+    userId: currentUserId,
+    photoUrl: photoUrl
+    // или position: 0 для удаления по позиции
+  }
+});
 
 // 2. Удалить из S3
 await client.mutate({
   mutation: DELETE_PHOTO,
   variables: { key }
-});
-
-// 3. Обновить массив фотографий в профиле
-const newPhotos = profile.photos.filter(p => p !== photoUrl);
-await client.mutate({
-  mutation: UPDATE_PROFILE,
-  variables: {
-    userId: currentUserId,
-    photos: newPhotos
-  }
 });
 ```
 

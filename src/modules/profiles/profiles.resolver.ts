@@ -73,4 +73,112 @@ export class ProfilesResolver {
     const result = await this.profilesService.deleteByUserId(userId);
     return result !== null;
   }
+
+  // === Управление фотографиями ===
+
+  @Mutation(() => ProfileModel)
+  async addPhoto(
+    @Args('userId', { type: () => ID }) userId: string,
+    @Args('photoUrl', { type: () => String }) photoUrl: string,
+    @Args('position', { type: () => Int, nullable: true }) position?: number,
+  ) {
+    const profile = await this.profilesService.findOrCreate(userId);
+    const photos = (profile.photos as string[]) || [];
+
+    if (photos.length >= 6) {
+      throw new BadRequestException('Maximum 6 photos allowed');
+    }
+
+    if (photos.includes(photoUrl)) {
+      throw new BadRequestException('Photo already exists');
+    }
+
+    // Если позиция не указана или больше длины - добавляем в конец
+    const insertPosition = position !== undefined && position >= 0 && position <= photos.length
+      ? position
+      : photos.length;
+
+    photos.splice(insertPosition, 0, photoUrl);
+
+    return this.profilesService.update(profile.id, { photos });
+  }
+
+  @Mutation(() => ProfileModel)
+  async removePhoto(
+    @Args('userId', { type: () => ID }) userId: string,
+    @Args('photoUrl', { type: () => String, nullable: true }) photoUrl?: string,
+    @Args('position', { type: () => Int, nullable: true }) position?: number,
+  ) {
+    const profile = await this.profilesService.findOrCreate(userId);
+    const photos = (profile.photos as string[]) || [];
+
+    if (photoUrl) {
+      const index = photos.indexOf(photoUrl);
+      if (index === -1) {
+        throw new BadRequestException('Photo not found');
+      }
+      photos.splice(index, 1);
+    } else if (position !== undefined && position >= 0 && position < photos.length) {
+      photos.splice(position, 1);
+    } else {
+      throw new BadRequestException('Provide either photoUrl or valid position');
+    }
+
+    return this.profilesService.update(profile.id, { photos });
+  }
+
+  @Mutation(() => ProfileModel)
+  async reorderPhotos(
+    @Args('userId', { type: () => ID }) userId: string,
+    @Args('photoUrls', { type: () => [String] }) photoUrls: string[],
+  ) {
+    const profile = await this.profilesService.findOrCreate(userId);
+    const currentPhotos = (profile.photos as string[]) || [];
+
+    // Проверяем что все URL из нового порядка существуют в текущих фото
+    const currentSet = new Set(currentPhotos);
+    const newSet = new Set(photoUrls);
+
+    if (photoUrls.length !== currentPhotos.length) {
+      throw new BadRequestException('Photo count mismatch');
+    }
+
+    for (const url of photoUrls) {
+      if (!currentSet.has(url)) {
+        throw new BadRequestException(`Photo not found: ${url}`);
+      }
+    }
+
+    for (const url of currentPhotos) {
+      if (!newSet.has(url)) {
+        throw new BadRequestException(`Missing photo in new order: ${url}`);
+      }
+    }
+
+    return this.profilesService.update(profile.id, { photos: photoUrls });
+  }
+
+  @Mutation(() => ProfileModel)
+  async movePhoto(
+    @Args('userId', { type: () => ID }) userId: string,
+    @Args('fromPosition', { type: () => Int }) fromPosition: number,
+    @Args('toPosition', { type: () => Int }) toPosition: number,
+  ) {
+    const profile = await this.profilesService.findOrCreate(userId);
+    const photos = (profile.photos as string[]) || [];
+
+    if (fromPosition < 0 || fromPosition >= photos.length) {
+      throw new BadRequestException('Invalid fromPosition');
+    }
+
+    if (toPosition < 0 || toPosition >= photos.length) {
+      throw new BadRequestException('Invalid toPosition');
+    }
+
+    // Перемещаем фото
+    const [photo] = photos.splice(fromPosition, 1);
+    photos.splice(toPosition, 0, photo);
+
+    return this.profilesService.update(profile.id, { photos });
+  }
 }
