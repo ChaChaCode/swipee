@@ -25,7 +25,11 @@ mutation Auth($initData: String!) {
       name
       bio
       age
+      gender
+      lookingFor
+      purpose
       photos
+      interests
       onboardingCompleted
     }
     isNewUser
@@ -59,6 +63,13 @@ mutation AuthTestUser {
     profile {
       id
       name
+      bio
+      age
+      gender
+      lookingFor
+      purpose
+      photos
+      onboardingCompleted
     }
     isNewUser
   }
@@ -75,11 +86,34 @@ mutation AuthTestUser {
 
 ### Query: `profile`
 
-Получить профиль по userId.
+Получить профиль по ID профиля.
 
 ```graphql
-query GetProfile($userId: ID!) {
-  profile(userId: $userId) {
+query GetProfile($id: ID!) {
+  profile(id: $id) {
+    id
+    userId
+    name
+    bio
+    age
+    gender
+    lookingFor
+    purpose
+    photos
+    onboardingCompleted
+  }
+}
+```
+
+---
+
+### Query: `profileByUserId`
+
+Получить профиль по ID пользователя.
+
+```graphql
+query GetProfileByUserId($userId: ID!) {
+  profileByUserId(userId: $userId) {
     id
     userId
     name
@@ -105,11 +139,47 @@ query GetProfile($userId: ID!) {
 
 ### Mutation: `updateProfile`
 
-Обновить профиль пользователя.
+Обновить профиль пользователя. Аргументы передаются отдельно (не input объектом).
 
 ```graphql
-mutation UpdateProfile($userId: ID!, $input: UpdateProfileInput!) {
-  updateProfile(userId: $userId, input: $input) {
+mutation UpdateProfile(
+  $userId: ID!
+  $name: String
+  $bio: String
+  $birthDate: DateTime
+  $gender: Gender
+  $lookingFor: LookingFor
+  $purpose: Purpose
+  $city: String
+  $latitude: String
+  $longitude: String
+  $photos: [String!]
+  $interests: [String!]
+  $minAge: Int
+  $maxAge: Int
+  $maxDistance: Int
+  $isVisible: Boolean
+  $onboardingCompleted: Boolean
+) {
+  updateProfile(
+    userId: $userId
+    name: $name
+    bio: $bio
+    birthDate: $birthDate
+    gender: $gender
+    lookingFor: $lookingFor
+    purpose: $purpose
+    city: $city
+    latitude: $latitude
+    longitude: $longitude
+    photos: $photos
+    interests: $interests
+    minAge: $minAge
+    maxAge: $maxAge
+    maxDistance: $maxDistance
+    isVisible: $isVisible
+    onboardingCompleted: $onboardingCompleted
+  ) {
     id
     name
     bio
@@ -121,27 +191,41 @@ mutation UpdateProfile($userId: ID!, $input: UpdateProfileInput!) {
 }
 ```
 
-**UpdateProfileInput:**
+**Доступные поля:**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `userId` | ID! | ID пользователя (обязательный) |
+| `name` | String | Имя |
+| `bio` | String | О себе |
+| `birthDate` | DateTime | Дата рождения |
+| `gender` | Gender | Пол (MALE, FEMALE, OTHER) |
+| `lookingFor` | LookingFor | Кого показывать (MALE, FEMALE, BOTH) |
+| `purpose` | Purpose | Цель в приложении |
+| `city` | String | Город |
+| `latitude` | String | Широта |
+| `longitude` | String | Долгота |
+| `photos` | [String!] | Фотографии (1-6) |
+| `interests` | [String!] | Теги/интересы |
+| `minAge` | Int | Мин. возраст в фильтре |
+| `maxAge` | Int | Макс. возраст в фильтре |
+| `maxDistance` | Int | Макс. дистанция (км) |
+| `isVisible` | Boolean | Видимость профиля |
+| `onboardingCompleted` | Boolean | Онбординг завершен |
+
+---
+
+### Mutation: `deleteProfile`
+
+Удалить профиль пользователя.
+
 ```graphql
-input UpdateProfileInput {
-  name: String
-  bio: String
-  birthDate: DateTime
-  gender: Gender          # MALE, FEMALE, OTHER
-  lookingFor: LookingFor  # MALE, FEMALE, BOTH
-  purpose: Purpose        # DATING, RELATIONSHIP, FRIENDSHIP, CHATTING, ADULT
-  city: String
-  latitude: Float
-  longitude: Float
-  photos: [String!]       # от 1 до 6 фото
-  interests: [String!]
-  minAge: Int
-  maxAge: Int
-  maxDistance: Int
-  isVisible: Boolean
-  onboardingCompleted: Boolean
+mutation DeleteProfile($userId: ID!) {
+  deleteProfile(userId: $userId)
 }
 ```
+
+**Ответ:** `Boolean` - успешно ли удален профиль
 
 ---
 
@@ -161,8 +245,9 @@ input UpdateProfileInput {
 ### Пример онбординга:
 
 ```graphql
-mutation CompleteOnboarding($userId: ID!) {
-  updateProfile(userId: $userId, input: {
+mutation CompleteOnboarding {
+  updateProfile(
+    userId: "user_id_here"
     name: "Анна"
     birthDate: "1995-05-15T00:00:00Z"
     gender: FEMALE
@@ -170,7 +255,7 @@ mutation CompleteOnboarding($userId: ID!) {
     purpose: DATING
     photos: ["https://example.com/photo1.jpg"]
     onboardingCompleted: true
-  }) {
+  ) {
     id
     name
     age
@@ -209,15 +294,16 @@ mutation CompleteOnboarding($userId: ID!) {
 ### Пример редактирования профиля:
 
 ```graphql
-mutation EditProfile($userId: ID!) {
-  updateProfile(userId: $userId, input: {
+mutation EditProfile {
+  updateProfile(
+    userId: "user_id_here"
     bio: "Люблю путешествия и хорошую музыку"
     interests: ["путешествия", "музыка", "кино", "спорт"]
     photos: [
       "https://example.com/photo1.jpg",
       "https://example.com/photo2.jpg"
     ]
-  }) {
+  ) {
     id
     bio
     interests
@@ -243,6 +329,7 @@ query Discovery($userId: ID!, $limit: Int) {
     bio
     age
     gender
+    purpose
     city
     photos
     interests
