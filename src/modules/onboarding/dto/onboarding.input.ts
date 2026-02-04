@@ -38,8 +38,8 @@ export class SetInterestsInput {
 @InputType()
 export class SetPhotosInput {
   @Field(() => [String])
-  @ArrayMinSize(2)
-  @ArrayMaxSize(5)
+  @ArrayMinSize(1)
+  @ArrayMaxSize(6)
   photoUrls: string[];
 }
 
@@ -89,8 +89,8 @@ export class CompleteOnboardingInput {
   interestIds: string[];
 
   @Field(() => [String])
-  @ArrayMinSize(2)
-  @ArrayMaxSize(5)
+  @ArrayMinSize(1)
+  @ArrayMaxSize(6)
   photoUrls: string[];
 
   @Field({ nullable: true })

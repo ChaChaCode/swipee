@@ -132,6 +132,70 @@ Authorization: tma <initData>
 
 ---
 
+## Пользователи (Users)
+
+### Query: `user`
+
+Получить пользователя по ID.
+
+```graphql
+query User($id: ID!) {
+  user(id: $id) {
+    id
+    telegramId
+    username
+    firstName
+    lastName
+    languageCode
+    isPremium
+    isActive
+    lastActiveAt
+    createdAt
+    updatedAt
+  }
+}
+```
+
+---
+
+### Query: `userByTelegramId`
+
+Получить пользователя по Telegram ID.
+
+```graphql
+query UserByTelegramId($telegramId: Int!) {
+  userByTelegramId(telegramId: $telegramId) {
+    id
+    telegramId
+    username
+    firstName
+    lastName
+    isPremium
+    isActive
+  }
+}
+```
+
+---
+
+### Модель User
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | ID | Внутренний ID |
+| `telegramId` | Int | Telegram ID |
+| `username` | String? | Username в Telegram |
+| `firstName` | String | Имя |
+| `lastName` | String? | Фамилия |
+| `languageCode` | String? | Код языка |
+| `isPremium` | Boolean | Telegram Premium |
+| `isActive` | Boolean | Активен ли пользователь |
+| `lastActiveAt` | DateTime | Последняя активность |
+| `createdAt` | DateTime | Дата создания |
+| `updatedAt` | DateTime | Дата обновления |
+
+---
+
 ## Профиль
 
 ### Query: `profile`
@@ -396,37 +460,375 @@ await client.mutate({
 
 ## Онбординг
 
-### Обязательные поля для завершения онбординга:
+Специальные endpoints для пошагового онбординга новых пользователей.
 
-| Поле | Тип | Описание |
-|------|-----|----------|
-| `name` | String | Имя пользователя |
-| `birthDate` | DateTime | Дата рождения |
-| `gender` | Gender | Пол: MALE, FEMALE, OTHER |
-| `lookingFor` | LookingFor | Кого показывать: MALE, FEMALE, BOTH |
-| `purpose` | Purpose | Цель в приложении |
-| `photos` | [String!] | От 1 до 6 фотографий |
+### Query: `onboardingProfile`
 
-### Пример онбординга:
+Получить текущее состояние профиля для онбординга.
 
 ```graphql
-mutation CompleteOnboarding {
-  updateProfile(
-    userId: "user_id_here"
-    name: "Анна"
-    birthDate: "1995-05-15T00:00:00Z"
-    gender: FEMALE
-    lookingFor: MALE
-    purpose: DATING
-    photos: ["https://example.com/photo1.jpg"]
-    onboardingCompleted: true
-  ) {
+query OnboardingProfile($userId: String!) {
+  onboardingProfile(userId: $userId) {
     id
     name
+    bio
     age
+    gender
+    lookingFor
+    photos
+    interests
+    city
+    latitude
+    longitude
     onboardingCompleted
   }
 }
+```
+
+---
+
+### Query: `onboardingStatus`
+
+Получить статус заполнения онбординга (какие поля заполнены).
+
+```graphql
+query OnboardingStatus($userId: String!) {
+  onboardingStatus(userId: $userId) {
+    hasName
+    hasBio
+    hasAge
+    hasGender
+    hasLookingFor
+    hasInterests
+    hasPhotos
+    hasLocation
+    isComplete
+    photosCount
+    interestsCount
+  }
+}
+```
+
+**Ответ OnboardingStatus:**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `hasName` | Boolean | Имя заполнено |
+| `hasBio` | Boolean | О себе заполнено |
+| `hasAge` | Boolean | Возраст указан |
+| `hasGender` | Boolean | Пол указан |
+| `hasLookingFor` | Boolean | Кого ищет указано |
+| `hasInterests` | Boolean | Интересы выбраны |
+| `hasPhotos` | Boolean | Фото загружены |
+| `hasLocation` | Boolean | Локация указана |
+| `isComplete` | Boolean | Онбординг завершен |
+| `photosCount` | Int | Количество фото |
+| `interestsCount` | Int | Количество интересов |
+
+---
+
+### Query: `interests`
+
+Получить список всех доступных интересов.
+
+```graphql
+query Interests {
+  interests {
+    id
+    name
+    emoji
+    category
+  }
+}
+```
+
+**Ответ:** массив интересов с id, названием, эмоджи и категорией.
+
+---
+
+### Mutation: `setName`
+
+Установить имя.
+
+```graphql
+mutation SetName($userId: String!, $input: SetNameInput!) {
+  setName(userId: $userId, input: $input) {
+    id
+    name
+    onboardingCompleted
+  }
+}
+```
+
+**Input:**
+```graphql
+input SetNameInput {
+  name: String!  # 1-50 символов
+}
+```
+
+---
+
+### Mutation: `setBio`
+
+Установить описание "О себе".
+
+```graphql
+mutation SetBio($userId: String!, $input: SetBioInput!) {
+  setBio(userId: $userId, input: $input) {
+    id
+    bio
+  }
+}
+```
+
+**Input:**
+```graphql
+input SetBioInput {
+  bio: String!  # до 500 символов
+}
+```
+
+---
+
+### Mutation: `setAge`
+
+Установить возраст.
+
+```graphql
+mutation SetAge($userId: String!, $input: SetAgeInput!) {
+  setAge(userId: $userId, input: $input) {
+    id
+    age
+  }
+}
+```
+
+**Input:**
+```graphql
+input SetAgeInput {
+  age: Int!  # 16-120
+}
+```
+
+---
+
+### Mutation: `setGender`
+
+Установить пол.
+
+```graphql
+mutation SetGender($userId: String!, $input: SetGenderInput!) {
+  setGender(userId: $userId, input: $input) {
+    id
+    gender
+  }
+}
+```
+
+**Input:**
+```graphql
+input SetGenderInput {
+  gender: Gender!  # MALE, FEMALE, OTHER
+}
+```
+
+---
+
+### Mutation: `setLookingFor`
+
+Установить кого ищет.
+
+```graphql
+mutation SetLookingFor($userId: String!, $input: SetLookingForInput!) {
+  setLookingFor(userId: $userId, input: $input) {
+    id
+    lookingFor
+  }
+}
+```
+
+**Input:**
+```graphql
+input SetLookingForInput {
+  lookingFor: LookingFor!  # MALE, FEMALE, BOTH
+}
+```
+
+---
+
+### Mutation: `setInterests`
+
+Установить интересы (по ID из списка interests).
+
+```graphql
+mutation SetInterests($userId: String!, $input: SetInterestsInput!) {
+  setInterests(userId: $userId, input: $input) {
+    id
+    interests
+  }
+}
+```
+
+**Input:**
+```graphql
+input SetInterestsInput {
+  interestIds: [String!]!
+}
+```
+
+---
+
+### Mutation: `setPhotos`
+
+Установить фотографии.
+
+```graphql
+mutation SetPhotos($userId: String!, $input: SetPhotosInput!) {
+  setPhotos(userId: $userId, input: $input) {
+    id
+    photos
+  }
+}
+```
+
+**Input:**
+```graphql
+input SetPhotosInput {
+  photoUrls: [String!]!  # от 1 до 6 фотографий
+}
+```
+
+---
+
+### Mutation: `setLocation`
+
+Установить локацию.
+
+```graphql
+mutation SetLocation($userId: String!, $input: SetLocationInput!) {
+  setLocation(userId: $userId, input: $input) {
+    id
+    city
+    latitude
+    longitude
+  }
+}
+```
+
+**Input:**
+```graphql
+input SetLocationInput {
+  city: String
+  latitude: String
+  longitude: String
+}
+```
+
+---
+
+### Mutation: `completeOnboarding`
+
+Завершить онбординг одним запросом (установить все поля сразу).
+
+```graphql
+mutation CompleteOnboarding($userId: String!, $input: CompleteOnboardingInput!) {
+  completeOnboarding(userId: $userId, input: $input) {
+    id
+    name
+    bio
+    age
+    gender
+    lookingFor
+    photos
+    interests
+    onboardingCompleted
+  }
+}
+```
+
+**Input:**
+```graphql
+input CompleteOnboardingInput {
+  name: String!           # 1-50 символов
+  bio: String             # до 500 символов (опционально)
+  age: Int!               # 16-120
+  gender: Gender!         # MALE, FEMALE, OTHER
+  lookingFor: LookingFor! # MALE, FEMALE, BOTH
+  interestIds: [String!]! # ID интересов
+  photoUrls: [String!]!   # 1-6 фотографий
+  city: String            # опционально
+  latitude: String        # опционально
+  longitude: String       # опционально
+}
+```
+
+---
+
+### Пример пошагового онбординга
+
+```javascript
+// 1. Проверить текущий статус
+const { data: status } = await client.query({
+  query: ONBOARDING_STATUS,
+  variables: { userId }
+});
+
+// 2. Получить список интересов
+const { data: interestsData } = await client.query({
+  query: INTERESTS
+});
+
+// 3. Установить данные по шагам
+await client.mutate({
+  mutation: SET_NAME,
+  variables: { userId, input: { name: 'Анна' } }
+});
+
+await client.mutate({
+  mutation: SET_AGE,
+  variables: { userId, input: { age: 25 } }
+});
+
+await client.mutate({
+  mutation: SET_GENDER,
+  variables: { userId, input: { gender: 'FEMALE' } }
+});
+
+await client.mutate({
+  mutation: SET_LOOKING_FOR,
+  variables: { userId, input: { lookingFor: 'MALE' } }
+});
+
+await client.mutate({
+  mutation: SET_INTERESTS,
+  variables: { userId, input: { interestIds: ['id1', 'id2', 'id3'] } }
+});
+
+await client.mutate({
+  mutation: SET_PHOTOS,
+  variables: { userId, input: { photoUrls: ['url1', 'url2'] } }
+});
+```
+
+### Пример завершения онбординга одним запросом
+
+```javascript
+await client.mutate({
+  mutation: COMPLETE_ONBOARDING,
+  variables: {
+    userId,
+    input: {
+      name: 'Анна',
+      age: 25,
+      gender: 'FEMALE',
+      lookingFor: 'MALE',
+      interestIds: ['id1', 'id2', 'id3'],
+      photoUrls: ['url1', 'url2'],
+      city: 'Москва'
+    }
+  }
+});
 ```
 
 ---
