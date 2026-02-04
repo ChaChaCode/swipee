@@ -6,6 +6,7 @@ import { SuperLikeReceivedModel } from './models/super-like-received.model';
 import { InteractionsService } from './interactions.service';
 import { CreateInteractionInput } from './dto/create-interaction.input';
 import { MatchesService } from '../matches/matches.service';
+import { toPhotoModels } from '../profiles/models/photo.model';
 
 @Resolver(() => InteractionModel)
 export class InteractionsResolver {
@@ -73,14 +74,28 @@ export class InteractionsResolver {
   async likesReceived(
     @Args('userId', { type: () => ID }) userId: string,
   ): Promise<LikeReceivedModel[]> {
-    return this.interactionsService.getLikesReceived(userId);
+    const likes = await this.interactionsService.getLikesReceived(userId);
+    return likes.map((like) => ({
+      ...like,
+      fromUser: {
+        ...like.fromUser,
+        photos: toPhotoModels(like.fromUser.photos as string[]),
+      },
+    }));
   }
 
   @Query(() => [SuperLikeReceivedModel])
   async superLikesReceived(
     @Args('userId', { type: () => ID }) userId: string,
   ): Promise<SuperLikeReceivedModel[]> {
-    return this.interactionsService.getSuperLikesReceived(userId);
+    const superLikes = await this.interactionsService.getSuperLikesReceived(userId);
+    return superLikes.map((superLike) => ({
+      ...superLike,
+      fromUser: {
+        ...superLike.fromUser,
+        photos: toPhotoModels(superLike.fromUser.photos as string[]),
+      },
+    }));
   }
 
   @Query(() => Int)
