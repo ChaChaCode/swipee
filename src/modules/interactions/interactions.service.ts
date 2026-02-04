@@ -34,8 +34,8 @@ export class InteractionsService {
       );
     }
 
-    // Calculate expiresAt (24 hours from now)
-    const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    // Calculate expiresAt (1 minute from now - for testing)
+    const expiresAt = new Date(now.getTime() + 1 * 60 * 1000);
     const dbType =
       typeStr === 'LIKE'
         ? 'like'
