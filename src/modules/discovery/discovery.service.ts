@@ -24,26 +24,7 @@ export interface DiscoveryFilters {
 
 @Injectable()
 export class DiscoveryService {
-  // Кэш показанных профилей: userId -> Set<profileId>
-  private shownProfiles = new Map<string, Set<string>>();
-
   constructor(@Inject(DRIZZLE) private db: Database) {}
-
-  private getShownProfileIds(userId: string): string[] {
-    return Array.from(this.shownProfiles.get(userId) || []);
-  }
-
-  private addShownProfiles(userId: string, profileIds: string[]) {
-    if (!this.shownProfiles.has(userId)) {
-      this.shownProfiles.set(userId, new Set());
-    }
-    const set = this.shownProfiles.get(userId)!;
-    profileIds.forEach(id => set.add(id));
-  }
-
-  resetShownProfiles(userId: string) {
-    this.shownProfiles.delete(userId);
-  }
 
   async getProfilesToDiscover(filters: DiscoveryFilters) {
     const { userId, limit = 10, offset = 0, excludeIds = [] } = filters;
@@ -113,11 +94,6 @@ export class DiscoveryService {
       conditions.push(notInArray(profiles.id, excludeIds));
     }
 
-    // Exclude already shown profiles (from cache)
-    const shownProfileIds = this.getShownProfileIds(userId);
-    if (shownProfileIds.length > 0) {
-      conditions.push(notInArray(profiles.id, shownProfileIds));
-    }
 
     // Filter by gender preference (what I'm looking for)
     if (myProfile.lookingFor && myProfile.lookingFor !== 'both') {
@@ -197,15 +173,10 @@ export class DiscoveryService {
         .limit(limit)
         .offset(offset);
 
-      const mappedResults = results.map((r) => ({
+      return results.map((r) => ({
         ...r.profile,
         distance: r.distance as number | null,
       }));
-
-      // Add to shown cache
-      this.addShownProfiles(userId, mappedResults.map(p => p.id));
-
-      return mappedResults;
     }
 
     // No location - just return profiles without distance
@@ -216,15 +187,10 @@ export class DiscoveryService {
       .limit(limit)
       .offset(offset);
 
-    const mappedResults = results.map((r) => ({
+    return results.map((r) => ({
       ...r,
       distance: null as number | null,
     }));
-
-    // Add to shown cache
-    this.addShownProfiles(userId, mappedResults.map(p => p.id));
-
-    return mappedResults;
   }
 
   async getDiscoveryCount(userId: string): Promise<number> {

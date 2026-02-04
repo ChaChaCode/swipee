@@ -1,4 +1,4 @@
-import { Resolver, Query, Args, Int, Mutation } from '@nestjs/graphql';
+import { Resolver, Query, Args, Int } from '@nestjs/graphql';
 import { DiscoveryService } from './discovery.service';
 import { DiscoveryProfile, DiscoveryResult } from './models/discovery.model';
 
@@ -76,9 +76,4 @@ export class DiscoveryResolver {
     return this.discoveryService.getDiscoveryCount(userId);
   }
 
-  @Mutation(() => Boolean)
-  async resetDiscovery(@Args('userId') userId: string): Promise<boolean> {
-    this.discoveryService.resetShownProfiles(userId);
-    return true;
-  }
 }
