@@ -1,4 +1,5 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { eq } from 'drizzle-orm';
 import postgres from 'postgres';
 import { createId } from '@paralleldrive/cuid2';
 import 'dotenv/config';
@@ -16,6 +17,8 @@ if (!DATABASE_URL) {
 const client = postgres(DATABASE_URL);
 const db = drizzle(client);
 
+const BASE_URL = 'https://storage.yandexcloud.net/swipee';
+
 // 5 girls
 const girls = [
   {
@@ -28,14 +31,14 @@ const girls = [
       age: 23,
       birthDate: new Date('2003-05-15'),
       gender: 'female' as const,
-      lookingFor: 'male' as const,
+      lookingFor: 'both' as const,
       purpose: 'dating' as const,
-      city: 'Москва',
-      latitude: '55.7558',
-      longitude: '37.6173',
+      city: 'Челябинск',
+      latitude: '55.1644',
+      longitude: '61.4368',
       photos: [
-        'https://randomuser.me/api/portraits/women/1.jpg',
-        'https://randomuser.me/api/portraits/women/2.jpg',
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/photo_2025-12-22_23-49-41.jpg`,
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/photo_2025-12-23_03-56-37.jpg`,
       ],
       interests: ['travel', 'music', 'cafe'],
     },
@@ -50,12 +53,12 @@ const girls = [
       age: 25,
       birthDate: new Date('2001-08-22'),
       gender: 'female' as const,
-      lookingFor: 'male' as const,
+      lookingFor: 'both' as const,
       purpose: 'relationship' as const,
-      city: 'Москва',
-      latitude: '55.7600',
-      longitude: '37.6200',
-      photos: ['https://randomuser.me/api/portraits/women/3.jpg'],
+      city: 'Челябинск',
+      latitude: '55.1650',
+      longitude: '61.4370',
+      photos: [`${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/photo_2026-01-16_04-10-32.jpg`],
       interests: ['books', 'art', 'nature'],
     },
   },
@@ -69,14 +72,14 @@ const girls = [
       age: 27,
       birthDate: new Date('1999-03-10'),
       gender: 'female' as const,
-      lookingFor: 'male' as const,
+      lookingFor: 'both' as const,
       purpose: 'dating' as const,
-      city: 'Санкт-Петербург',
-      latitude: '59.9343',
-      longitude: '30.3351',
+      city: 'Челябинск',
+      latitude: '55.1655',
+      longitude: '61.4375',
       photos: [
-        'https://randomuser.me/api/portraits/women/4.jpg',
-        'https://randomuser.me/api/portraits/women/5.jpg',
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/photo_2025-07-21_21-39-38.jpg`,
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/photo_2024-12-03_15-48-01.jpg`,
       ],
       interests: ['fitness', 'sport', 'cooking'],
     },
@@ -91,12 +94,12 @@ const girls = [
       age: 22,
       birthDate: new Date('2004-01-28'),
       gender: 'female' as const,
-      lookingFor: 'male' as const,
+      lookingFor: 'both' as const,
       purpose: 'chatting' as const,
-      city: 'Москва',
-      latitude: '55.7520',
-      longitude: '37.6150',
-      photos: ['https://randomuser.me/api/portraits/women/6.jpg'],
+      city: 'Челябинск',
+      latitude: '55.1660',
+      longitude: '61.4380',
+      photos: [`${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/photo_2022-09-21_11-12-16.jpg`],
       interests: ['movies', 'gaming', 'anime'],
     },
   },
@@ -110,20 +113,40 @@ const girls = [
       age: 24,
       birthDate: new Date('2002-07-05'),
       gender: 'female' as const,
-      lookingFor: 'male' as const,
+      lookingFor: 'both' as const,
       purpose: 'friendship' as const,
-      city: 'Казань',
-      latitude: '55.8304',
-      longitude: '49.0661',
+      city: 'Челябинск',
+      latitude: '55.1665',
+      longitude: '61.4385',
       photos: [
-        'https://randomuser.me/api/portraits/women/7.jpg',
-        'https://randomuser.me/api/portraits/women/8.jpg',
-        'https://randomuser.me/api/portraits/women/9.jpg',
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/6c202abe-145a-4d19-b5a6-45986a767fb5.png`,
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/FemAPA2MpyB7beOxNm-zcZ3rK9aQun7uortbSSaP7S9MWQtQlb02WkkAnzo7L6vYeBXBqhmSu5kwMIHCRRULlccQ.jpg`,
       ],
       interests: ['photo', 'art', 'travel'],
     },
   },
 ];
+
+// Test user
+const testUser = {
+  telegramId: 999999999,
+  username: 'test_user',
+  firstName: 'Тест',
+  profile: {
+    name: 'Тестовый пользователь',
+    bio: 'Тестовый аккаунт для разработки',
+    age: 25,
+    birthDate: new Date('2001-01-01'),
+    gender: 'male' as const,
+    lookingFor: 'both' as const,
+    purpose: 'dating' as const,
+    city: 'Челябинск',
+    latitude: '55.1644',
+    longitude: '61.4368',
+    photos: [`${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/123123123.png`],
+    interests: ['tech', 'gaming', 'music'],
+  },
+};
 
 // 5 boys
 const boys = [
@@ -137,14 +160,14 @@ const boys = [
       age: 26,
       birthDate: new Date('2000-04-12'),
       gender: 'male' as const,
-      lookingFor: 'female' as const,
+      lookingFor: 'both' as const,
       purpose: 'dating' as const,
-      city: 'Москва',
-      latitude: '55.7580',
-      longitude: '37.6190',
+      city: 'Челябинск',
+      latitude: '55.1670',
+      longitude: '61.4390',
       photos: [
-        'https://randomuser.me/api/portraits/men/1.jpg',
-        'https://randomuser.me/api/portraits/men/2.jpg',
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/123123123.png`,
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/55b3cae494cb6b44071320183e9ed67e.jpg`,
       ],
       interests: ['tech', 'gaming', 'movies'],
     },
@@ -159,12 +182,12 @@ const boys = [
       age: 28,
       birthDate: new Date('1998-11-30'),
       gender: 'male' as const,
-      lookingFor: 'female' as const,
+      lookingFor: 'both' as const,
       purpose: 'relationship' as const,
-      city: 'Санкт-Петербург',
-      latitude: '59.9380',
-      longitude: '30.3140',
-      photos: ['https://randomuser.me/api/portraits/men/3.jpg'],
+      city: 'Челябинск',
+      latitude: '55.1675',
+      longitude: '61.4395',
+      photos: [`${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/65f61ce32da41b49974c63bfbfb9f3a1.jpg`],
       interests: ['sport', 'fitness', 'nature'],
     },
   },
@@ -178,14 +201,14 @@ const boys = [
       age: 24,
       birthDate: new Date('2002-02-18'),
       gender: 'male' as const,
-      lookingFor: 'female' as const,
+      lookingFor: 'both' as const,
       purpose: 'dating' as const,
-      city: 'Москва',
-      latitude: '55.7540',
-      longitude: '37.6210',
+      city: 'Челябинск',
+      latitude: '55.1680',
+      longitude: '61.4400',
       photos: [
-        'https://randomuser.me/api/portraits/men/4.jpg',
-        'https://randomuser.me/api/portraits/men/5.jpg',
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/f965f1528cac6912a0f8b5f0ebf03646.jpg`,
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/nrs0bxabt48mmhy24f761xlg.jpg`,
       ],
       interests: ['music', 'party', 'cafe'],
     },
@@ -200,12 +223,12 @@ const boys = [
       age: 30,
       birthDate: new Date('1996-09-08'),
       gender: 'male' as const,
-      lookingFor: 'female' as const,
+      lookingFor: 'both' as const,
       purpose: 'friendship' as const,
-      city: 'Казань',
-      latitude: '55.8320',
-      longitude: '49.0700',
-      photos: ['https://randomuser.me/api/portraits/men/6.jpg'],
+      city: 'Челябинск',
+      latitude: '55.1685',
+      longitude: '61.4405',
+      photos: [`${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/w41rksznd3ozl3g94cqie46f.jpg`],
       interests: ['travel', 'photo', 'cooking'],
     },
   },
@@ -219,14 +242,14 @@ const boys = [
       age: 25,
       birthDate: new Date('2001-06-25'),
       gender: 'male' as const,
-      lookingFor: 'female' as const,
+      lookingFor: 'both' as const,
       purpose: 'chatting' as const,
-      city: 'Москва',
-      latitude: '55.7610',
-      longitude: '37.6100',
+      city: 'Челябинск',
+      latitude: '55.1690',
+      longitude: '61.4410',
       photos: [
-        'https://randomuser.me/api/portraits/men/7.jpg',
-        'https://randomuser.me/api/portraits/men/8.jpg',
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/123123123.png`,
+        `${BASE_URL}/photos/dxs13a5704jdg2cnbojz94wz/photo_2022-09-21_11-12-16.jpg`,
       ],
       interests: ['books', 'cafe', 'art'],
     },
@@ -236,7 +259,15 @@ const boys = [
 async function seed() {
   console.log('Seeding database...');
 
-  const allUsers = [...girls, ...boys];
+  // Clear existing seed users (by telegramId range)
+  const seedTelegramIds = [999999999, 1000001, 1000002, 1000003, 1000004, 1000005, 2000001, 2000002, 2000003, 2000004, 2000005];
+
+  for (const tgId of seedTelegramIds) {
+    await db.delete(users).where(eq(users.telegramId, tgId));
+  }
+  console.log('Cleared old seed users');
+
+  const allUsers = [testUser, ...girls, ...boys];
 
   for (const userData of allUsers) {
     const userId = createId();

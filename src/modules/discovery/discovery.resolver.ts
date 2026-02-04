@@ -1,4 +1,4 @@
-import { Resolver, Query, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Args, Int, Mutation } from '@nestjs/graphql';
 import { DiscoveryService } from './discovery.service';
 import { DiscoveryProfile, DiscoveryResult } from './models/discovery.model';
 
@@ -11,11 +11,13 @@ export class DiscoveryResolver {
     @Args('userId') userId: string,
     @Args('limit', { type: () => Int, defaultValue: 10 }) limit: number,
     @Args('offset', { type: () => Int, defaultValue: 0 }) offset: number,
+    @Args('excludeIds', { type: () => [String], defaultValue: [] }) excludeIds: string[],
   ): Promise<DiscoveryResult> {
     const profiles = await this.discoveryService.getProfilesToDiscover({
       userId,
       limit: limit + 1, // Fetch one extra to check if there are more
       offset,
+      excludeIds,
     });
 
     const hasMore = profiles.length > limit;
@@ -45,11 +47,13 @@ export class DiscoveryResolver {
     @Args('userId') userId: string,
     @Args('limit', { type: () => Int, defaultValue: 10 }) limit: number,
     @Args('offset', { type: () => Int, defaultValue: 0 }) offset: number,
+    @Args('excludeIds', { type: () => [String], defaultValue: [] }) excludeIds: string[],
   ): Promise<DiscoveryProfile[]> {
     const profiles = await this.discoveryService.getProfilesToDiscover({
       userId,
       limit,
       offset,
+      excludeIds,
     });
 
     return profiles.map((p) => ({
@@ -70,5 +74,11 @@ export class DiscoveryResolver {
   @Query(() => Int)
   async discoveryCount(@Args('userId') userId: string): Promise<number> {
     return this.discoveryService.getDiscoveryCount(userId);
+  }
+
+  @Mutation(() => Boolean)
+  async resetDiscovery(@Args('userId') userId: string): Promise<boolean> {
+    this.discoveryService.resetShownProfiles(userId);
+    return true;
   }
 }
