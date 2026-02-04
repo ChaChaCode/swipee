@@ -82,6 +82,56 @@ mutation AuthTestUser {
 
 ---
 
+### Mutation: `authDev` (только dev)
+
+Авторизация без валидации подписи (для локальной разработки).
+
+```graphql
+mutation AuthDev($initData: String!) {
+  authDev(initData: $initData) {
+    user {
+      id
+      telegramId
+      username
+      firstName
+    }
+    profile {
+      id
+      name
+      onboardingCompleted
+    }
+    isNewUser
+  }
+}
+```
+
+---
+
+### Query: `me`
+
+Получить текущего пользователя по Authorization header.
+
+```graphql
+query Me {
+  me {
+    id
+    telegramId
+    username
+    firstName
+    lastName
+  }
+}
+```
+
+**Headers:**
+```
+Authorization: tma <initData>
+```
+
+**Ответ:** `User` или `null` если не авторизован
+
+---
+
 ## Профиль
 
 ### Query: `profile`
@@ -229,6 +279,121 @@ mutation DeleteProfile($userId: ID!) {
 
 ---
 
+## Загрузка фотографий
+
+Фотографии загружаются через presigned URL в Yandex Cloud S3.
+
+### Mutation: `getUploadUrl`
+
+Получить presigned URL для загрузки фотографии.
+
+```graphql
+mutation GetUploadUrl($userId: String!, $mimeType: String) {
+  getUploadUrl(userId: $userId, mimeType: $mimeType) {
+    uploadUrl
+    key
+    publicUrl
+  }
+}
+```
+
+**Параметры:**
+- `userId` - ID пользователя
+- `mimeType` - MIME тип изображения (по умолчанию `image/jpeg`)
+
+**Поддерживаемые форматы:**
+- `image/jpeg` / `image/jpg`
+- `image/png`
+- `image/webp`
+- `image/gif`
+
+**Ответ:**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `uploadUrl` | String | Presigned URL для загрузки (действует 1 час) |
+| `key` | String | Ключ файла в S3 |
+| `publicUrl` | String | Публичный URL для доступа к фото |
+
+---
+
+### Mutation: `deletePhoto`
+
+Удалить фотографию из хранилища.
+
+```graphql
+mutation DeletePhoto($key: String!) {
+  deletePhoto(key: $key)
+}
+```
+
+**Параметры:**
+- `key` - ключ файла в S3 (получен из `getUploadUrl`)
+
+**Ответ:** `Boolean` - успешно ли удалено
+
+---
+
+### Полный флоу загрузки фотографии
+
+```javascript
+// 1. Получить presigned URL
+const { data } = await client.mutate({
+  mutation: GET_UPLOAD_URL,
+  variables: {
+    userId: currentUserId,
+    mimeType: 'image/jpeg'
+  }
+});
+
+const { uploadUrl, publicUrl } = data.getUploadUrl;
+
+// 2. Загрузить файл напрямую в S3
+await fetch(uploadUrl, {
+  method: 'PUT',
+  body: imageFile,
+  headers: {
+    'Content-Type': 'image/jpeg',
+  }
+});
+
+// 3. Добавить URL в профиль
+const currentPhotos = profile.photos || [];
+await client.mutate({
+  mutation: UPDATE_PROFILE,
+  variables: {
+    userId: currentUserId,
+    photos: [...currentPhotos, publicUrl]
+  }
+});
+```
+
+### Удаление фотографии из профиля
+
+```javascript
+// 1. Получить key из URL (последняя часть пути)
+const photoUrl = 'https://storage.yandexcloud.net/swipee/photos/userId/abc123.jpg';
+const key = 'photos/userId/abc123.jpg'; // Извлечь из URL
+
+// 2. Удалить из S3
+await client.mutate({
+  mutation: DELETE_PHOTO,
+  variables: { key }
+});
+
+// 3. Обновить массив фотографий в профиле
+const newPhotos = profile.photos.filter(p => p !== photoUrl);
+await client.mutate({
+  mutation: UPDATE_PROFILE,
+  variables: {
+    userId: currentUserId,
+    photos: newPhotos
+  }
+});
+```
+
+---
+
 ## Онбординг
 
 ### Обязательные поля для завершения онбординга:
@@ -316,23 +481,28 @@ mutation EditProfile {
 
 ## Лента анкет (Discovery)
 
-### Query: `discovery`
+### Query: `discover`
 
-Получить анкеты для свайпов.
+Получить анкеты для свайпов с пагинацией.
 
 ```graphql
-query Discovery($userId: ID!, $limit: Int) {
-  discovery(userId: $userId, limit: $limit) {
-    id
-    userId
-    name
-    bio
-    age
-    gender
-    purpose
-    city
-    photos
-    interests
+query Discover($userId: String!, $limit: Int, $offset: Int, $excludeIds: [String!]) {
+  discover(userId: $userId, limit: $limit, offset: $offset, excludeIds: $excludeIds) {
+    profiles {
+      id
+      userId
+      name
+      bio
+      age
+      gender
+      lookingFor
+      city
+      photos
+      interests
+      distance
+    }
+    total
+    hasMore
   }
 }
 ```
@@ -340,6 +510,29 @@ query Discovery($userId: ID!, $limit: Int) {
 **Параметры:**
 - `userId` - ID текущего пользователя
 - `limit` - количество анкет (по умолчанию 10)
+- `offset` - смещение для пагинации (по умолчанию 0)
+- `excludeIds` - массив ID профилей для исключения (по умолчанию [])
+
+**Ответ:**
+- `profiles` - массив анкет
+- `total` - количество возвращенных анкет
+- `hasMore` - есть ли еще анкеты
+
+**Поля профиля в Discovery:**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `id` | ID | ID профиля |
+| `userId` | String | ID пользователя |
+| `name` | String | Имя |
+| `bio` | String | О себе |
+| `age` | Int | Возраст |
+| `gender` | Gender | Пол |
+| `lookingFor` | LookingFor | Кого ищет |
+| `city` | String | Город |
+| `photos` | [String] | Фотографии |
+| `interests` | [String] | Интересы |
+| `distance` | Float | Расстояние в км |
 
 **Фильтрация (автоматическая):**
 - По полу (gender/lookingFor)
@@ -348,6 +541,43 @@ query Discovery($userId: ID!, $limit: Int) {
 - Исключаются пользователи с активными взаимодействиями (24ч cooldown)
 - Исключаются активные матчи
 - Исключаются матчи в периоде скрытия (2 дня)
+
+---
+
+### Query: `discoverProfiles`
+
+Альтернативный запрос - возвращает просто массив профилей без обертки.
+
+```graphql
+query DiscoverProfiles($userId: String!, $limit: Int, $offset: Int, $excludeIds: [String!]) {
+  discoverProfiles(userId: $userId, limit: $limit, offset: $offset, excludeIds: $excludeIds) {
+    id
+    userId
+    name
+    bio
+    age
+    gender
+    city
+    photos
+    interests
+    distance
+  }
+}
+```
+
+---
+
+### Query: `discoveryCount`
+
+Получить количество доступных анкет для пользователя.
+
+```graphql
+query DiscoveryCount($userId: String!) {
+  discoveryCount(userId: $userId)
+}
+```
+
+**Ответ:** `Int` - количество анкет
 
 ---
 
@@ -524,18 +754,60 @@ query CheckMutual($user1Id: ID!, $user2Id: ID!) {
 
 ## Матчи
 
-### Query: `matches`
+### Query: `matchesByUser`
 
 Получить список матчей пользователя.
 
 ```graphql
-query Matches($userId: ID!) {
-  matches(userId: $userId) {
+query MatchesByUser($userId: ID!) {
+  matchesByUser(userId: $userId) {
     id
     user1Id
     user2Id
+    user1 {
+      id
+      telegramId
+      username
+    }
+    user2 {
+      id
+      telegramId
+      username
+    }
     user1TelegramUsername
     user2TelegramUsername
+    isActive
+    user1Notified
+    user2Notified
+    hiddenUntil
+    createdAt
+    updatedAt
+  }
+}
+```
+
+**Ответ:**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `user1Id` / `user2Id` | ID | ID пользователей |
+| `user1` / `user2` | User | Вложенные объекты пользователей |
+| `user1TelegramUsername` / `user2TelegramUsername` | String | Telegram username для связи |
+| `isActive` | Boolean | Активен ли матч |
+| `user1Notified` / `user2Notified` | Boolean | Отправлено ли уведомление |
+| `hiddenUntil` | DateTime | До какого времени скрыт из ленты (2 дня) |
+| `createdAt` / `updatedAt` | DateTime | Даты создания и обновления |
+
+---
+
+### Query: `match`
+
+Получить конкретный матч между двумя пользователями.
+
+```graphql
+query Match($user1Id: ID!, $user2Id: ID!) {
+  match(user1Id: $user1Id, user2Id: $user2Id) {
+    id
     isActive
     hiddenUntil
     createdAt
@@ -543,10 +815,7 @@ query Matches($userId: ID!) {
 }
 ```
 
-**Ответ:**
-- `user1TelegramUsername` / `user2TelegramUsername` - Telegram username для связи
-- `hiddenUntil` - до какого времени скрыт из ленты (2 дня после матча)
-- `isActive` - активен ли матч
+**Ответ:** `Match` или `null` если матча нет
 
 ---
 
@@ -614,9 +883,17 @@ enum InteractionType {
 ```javascript
 // 1. Получить анкеты
 const { data } = await client.query({
-  query: DISCOVERY_QUERY,
-  variables: { userId: currentUserId, limit: 10 }
+  query: DISCOVER_QUERY,
+  variables: {
+    userId: currentUserId,
+    limit: 10,
+    offset: 0,
+    excludeIds: []
+  }
 });
+
+const profiles = data.discover.profiles;
+const hasMore = data.discover.hasMore;
 
 // 2. Свайп вправо (лайк)
 const { data: likeResult } = await client.mutate({
@@ -674,6 +951,32 @@ const { data } = await client.query({
 await client.mutate({
   mutation: MARK_AS_READ,
   variables: { interactionId: superLike.id }
+});
+```
+
+### Страница матчей
+
+```javascript
+// Получить все матчи
+const { data } = await client.query({
+  query: MATCHES_BY_USER,
+  variables: { userId: currentUserId }
+});
+
+data.matchesByUser.forEach(match => {
+  // Определить кто партнер
+  const partnerId = match.user1Id === currentUserId ? match.user2Id : match.user1Id;
+  const partnerUsername = match.user1Id === currentUserId
+    ? match.user2TelegramUsername
+    : match.user1TelegramUsername;
+
+  console.log('Матч с:', partnerUsername);
+});
+
+// Отменить матч
+await client.mutate({
+  mutation: UNMATCH,
+  variables: { matchId: match.id }
 });
 ```
 
