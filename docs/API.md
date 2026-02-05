@@ -1407,6 +1407,104 @@ query CheckMutual($user1Id: ID!, $user2Id: ID!) {
 
 ---
 
+## Отмена свайпа (Undo)
+
+Возможность отменить последний свайп и вернуть анкету.
+
+**Лимиты:**
+- Обычные пользователи: **10 раз в день** бесплатно
+- Premium пользователи: **безлимитно**
+
+---
+
+### Query: `undoStatus`
+
+Проверить доступность undo для пользователя.
+
+```graphql
+query UndoStatus($userId: ID!) {
+  undoStatus(userId: $userId) {
+    canUndo
+    remaining
+    isPremium
+  }
+}
+```
+
+**Ответ:**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `canUndo` | Boolean | Можно ли использовать undo |
+| `remaining` | Int | Осталось использований сегодня (-1 = безлимитно для premium) |
+| `isPremium` | Boolean | Premium статус пользователя |
+
+---
+
+### Mutation: `undoLastInteraction`
+
+Отменить последний свайп. Возвращает профиль для повторного показа.
+
+```graphql
+mutation UndoLastInteraction($userId: ID!) {
+  undoLastInteraction(userId: $userId) {
+    profile {
+      id
+      userId
+      name
+      bio
+      age
+      gender
+      city
+      photos {
+        url
+        position
+      }
+      interests
+    }
+    remaining
+  }
+}
+```
+
+**Параметры:**
+- `userId` - ID пользователя
+
+**Ответ:**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `profile` | Profile | Профиль для повторного показа |
+| `remaining` | Int | Осталось использований сегодня (-1 = безлимитно) |
+
+**Ошибки:**
+- `Daily undo limit reached. Upgrade to premium for unlimited undo.` - лимит исчерпан
+- `No interactions to undo.` - нет свайпов для отмены
+
+**Пример использования:**
+
+```javascript
+// Проверить доступность
+const { data: status } = await client.query({
+  query: UNDO_STATUS,
+  variables: { userId }
+});
+
+if (status.undoStatus.canUndo) {
+  // Отменить последний свайп
+  const { data } = await client.mutate({
+    mutation: UNDO_LAST_INTERACTION,
+    variables: { userId }
+  });
+
+  // Показать профиль снова
+  const profile = data.undoLastInteraction.profile;
+  console.log('Remaining undo today:', data.undoLastInteraction.remaining);
+}
+```
+
+---
+
 ## Матчи
 
 ### Query: `matchesByUser`

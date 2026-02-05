@@ -3,6 +3,7 @@ import { InteractionModel, InteractionType } from './models/interaction.model';
 import { InteractionResultModel } from './models/interaction-result.model';
 import { LikeReceivedModel } from './models/like-received.model';
 import { SuperLikeReceivedModel } from './models/super-like-received.model';
+import { UndoResultModel, UndoStatusModel } from './models/undo-result.model';
 import { InteractionsService } from './interactions.service';
 import { CreateInteractionInput } from './dto/create-interaction.input';
 import { MatchesService } from '../matches/matches.service';
@@ -122,5 +123,27 @@ export class InteractionsResolver {
     @Args('user2Id', { type: () => ID }) user2Id: string,
   ): Promise<boolean> {
     return this.interactionsService.checkMutualLike(user1Id, user2Id);
+  }
+
+  @Query(() => UndoStatusModel)
+  async undoStatus(
+    @Args('userId', { type: () => ID }) userId: string,
+  ): Promise<UndoStatusModel> {
+    return this.interactionsService.canUseUndo(userId);
+  }
+
+  @Mutation(() => UndoResultModel)
+  async undoLastInteraction(
+    @Args('userId', { type: () => ID }) userId: string,
+  ): Promise<UndoResultModel> {
+    const result = await this.interactionsService.undoLastInteraction(userId);
+    return {
+      profile: {
+        ...result.profile,
+        age: calculateAge(result.profile.birthDate as Date | null) ?? undefined,
+        photos: toPhotoModels(result.profile.photos as string[]),
+      } as any,
+      remaining: result.remaining,
+    };
   }
 }

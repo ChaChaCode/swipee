@@ -55,6 +55,10 @@ export const profiles = pgTable('profiles', {
   isVisible: boolean('is_visible').default(true),
   onboardingCompleted: boolean('onboarding_completed').default(false),
 
+  // Undo feature (10 per day for free, unlimited for premium)
+  undoCountToday: integer('undo_count_today').default(0),
+  lastUndoDate: timestamp('last_undo_date'),
+
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

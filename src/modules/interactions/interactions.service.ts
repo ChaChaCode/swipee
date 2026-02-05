@@ -1,13 +1,15 @@
 import { Inject, Injectable, BadRequestException } from '@nestjs/common';
-import { and, eq, gte, or, sql } from 'drizzle-orm';
+import { and, eq, gte, or, sql, desc } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { DRIZZLE } from '../../database/database.module';
 import type { Database } from '../../database/database.module';
-import { interactions, profiles } from '../../database/schema';
+import { interactions, profiles, users } from '../../database/schema';
 import { CreateInteractionInput } from './dto/create-interaction.input';
 import { InteractionType } from './models/interaction.model';
 import { Gender, LookingFor, Purpose } from '../profiles/models/profile.model';
 import { calculateAge } from '../../common/utils/age.utils';
+
+const UNDO_DAILY_LIMIT = 10;
 
 @Injectable()
 export class InteractionsService {
@@ -307,5 +309,159 @@ export class InteractionsService {
           gte(interactions.expiresAt, now),
         ),
       );
+  }
+
+  /**
+   * Get the last interaction made by user
+   */
+  async getLastInteraction(userId: string) {
+    const result = await this.db
+      .select({
+        interaction: interactions,
+        profile: profiles,
+      })
+      .from(interactions)
+      .innerJoin(profiles, eq(profiles.userId, interactions.toUserId))
+      .where(eq(interactions.fromUserId, userId))
+      .orderBy(desc(interactions.createdAt))
+      .limit(1);
+
+    if (!result[0]) return null;
+
+    return {
+      interaction: result[0].interaction,
+      profile: this.mapProfileToModel(result[0].profile),
+    };
+  }
+
+  /**
+   * Delete an interaction (for undo)
+   */
+  async deleteInteraction(interactionId: string) {
+    const result = await this.db
+      .delete(interactions)
+      .where(eq(interactions.id, interactionId))
+      .returning();
+    return result[0] ?? null;
+  }
+
+  /**
+   * Check if user can use undo (10/day for free, unlimited for premium)
+   */
+  async canUseUndo(userId: string): Promise<{ canUndo: boolean; remaining: number; isPremium: boolean }> {
+    // Get user to check premium status
+    const userResult = await this.db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    const user = userResult[0];
+    if (!user) {
+      return { canUndo: false, remaining: 0, isPremium: false };
+    }
+
+    const isPremium = user.isPremium ?? false;
+
+    // Premium users have unlimited undo
+    if (isPremium) {
+      return { canUndo: true, remaining: -1, isPremium: true };
+    }
+
+    // Get profile to check undo count
+    const profileResult = await this.db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.userId, userId))
+      .limit(1);
+
+    const profile = profileResult[0];
+    if (!profile) {
+      return { canUndo: false, remaining: 0, isPremium: false };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Check if last undo was today
+    const lastUndoDate = profile.lastUndoDate;
+    const isToday = lastUndoDate && new Date(lastUndoDate).setHours(0, 0, 0, 0) === today.getTime();
+
+    const undoCountToday = isToday ? (profile.undoCountToday ?? 0) : 0;
+    const remaining = UNDO_DAILY_LIMIT - undoCountToday;
+
+    return {
+      canUndo: remaining > 0,
+      remaining,
+      isPremium: false,
+    };
+  }
+
+  /**
+   * Increment undo count for user
+   */
+  async incrementUndoCount(userId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get current profile
+    const profileResult = await this.db
+      .select()
+      .from(profiles)
+      .where(eq(profiles.userId, userId))
+      .limit(1);
+
+    const profile = profileResult[0];
+    if (!profile) return;
+
+    // Check if last undo was today
+    const lastUndoDate = profile.lastUndoDate;
+    const isToday = lastUndoDate && new Date(lastUndoDate).setHours(0, 0, 0, 0) === today.getTime();
+
+    const newCount = isToday ? (profile.undoCountToday ?? 0) + 1 : 1;
+
+    await this.db
+      .update(profiles)
+      .set({
+        undoCountToday: newCount,
+        lastUndoDate: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.userId, userId));
+  }
+
+  /**
+   * Undo last interaction
+   * Returns the profile that was shown (to display again)
+   */
+  async undoLastInteraction(userId: string) {
+    // Check if can use undo
+    const { canUndo, remaining, isPremium } = await this.canUseUndo(userId);
+
+    if (!canUndo) {
+      throw new BadRequestException(
+        'Daily undo limit reached. Upgrade to premium for unlimited undo.',
+      );
+    }
+
+    // Get last interaction
+    const last = await this.getLastInteraction(userId);
+    if (!last) {
+      throw new BadRequestException('No interactions to undo.');
+    }
+
+    // Delete the interaction
+    await this.deleteInteraction(last.interaction.id);
+
+    // Increment undo count (only for non-premium)
+    if (!isPremium) {
+      await this.incrementUndoCount(userId);
+    }
+
+    // Return the profile and remaining count
+    return {
+      profile: last.profile,
+      remaining: isPremium ? -1 : remaining - 1,
+    };
   }
 }
