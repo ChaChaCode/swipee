@@ -1,10 +1,10 @@
 import { Field, ObjectType, Int } from '@nestjs/graphql';
-import { ProfileModel } from '../../profiles/models/profile.model';
+import { DiscoveryProfile } from '../../discovery/models/discovery.model';
 
 @ObjectType()
 export class UndoResultModel {
-  @Field(() => ProfileModel)
-  profile: ProfileModel;
+  @Field(() => DiscoveryProfile)
+  profile: DiscoveryProfile;
 
   @Field(() => Int, { description: 'Remaining undo uses today (-1 for premium = unlimited)' })
   remaining: number;

@@ -139,10 +139,17 @@ export class InteractionsResolver {
     const result = await this.interactionsService.undoLastInteraction(userId);
     return {
       profile: {
-        ...result.profile,
+        id: result.profile.id,
+        userId: result.profile.userId,
+        name: result.profile.name,
+        bio: result.profile.bio,
         age: calculateAge(result.profile.birthDate as Date | null) ?? undefined,
+        gender: result.profile.gender,
+        lookingFor: result.profile.lookingFor,
+        city: result.profile.city,
         photos: toPhotoModels(result.profile.photos as string[]),
-      } as any,
+        interests: result.profile.interests as string[],
+      },
       remaining: result.remaining,
     };
   }
