@@ -70,6 +70,9 @@ export class ProfileModel {
   @Field({ nullable: true })
   longitude?: string;
 
+  @Field({ nullable: true })
+  anyLocation?: boolean;
+
   @Field(() => [PhotoModel])
   photos: PhotoModel[];
 

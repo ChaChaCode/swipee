@@ -273,6 +273,7 @@ mutation UpdateProfile(
   $city: String
   $latitude: String
   $longitude: String
+  $anyLocation: Boolean
   $photos: [String!]
   $interests: [String!]
   $minAge: Int
@@ -292,6 +293,7 @@ mutation UpdateProfile(
     city: $city
     latitude: $latitude
     longitude: $longitude
+    anyLocation: $anyLocation
     photos: $photos
     interests: $interests
     minAge: $minAge
@@ -306,6 +308,7 @@ mutation UpdateProfile(
     age
     photos
     interests
+    anyLocation
     onboardingCompleted
   }
 }
@@ -325,6 +328,7 @@ mutation UpdateProfile(
 | `city` | String | Город |
 | `latitude` | String | Широта |
 | `longitude` | String | Долгота |
+| `anyLocation` | Boolean | Показывать анкеты откуда угодно (сбрасывает город/координаты) |
 | `photos` | [Photo] | Фотографии с позициями (1-6) |
 | `interests` | [String!] | Теги/интересы |
 | `minAge` | Int | Мин. возраст в фильтре |
@@ -1087,6 +1091,7 @@ await client.mutate({
 | `purpose` | Цель в приложении |
 | `city` | Город |
 | `latitude/longitude` | Координаты |
+| `anyLocation` | Показывать анкеты откуда угодно |
 | `photos` | Фотографии (1-6) |
 | `interests` | Теги/интересы |
 | `minAge/maxAge` | Фильтр по возрасту |

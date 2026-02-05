@@ -35,6 +35,7 @@ export class ProfilesResolver {
     @Args('city', { type: () => String, nullable: true }) city?: string,
     @Args('latitude', { type: () => String, nullable: true }) latitude?: string,
     @Args('longitude', { type: () => String, nullable: true }) longitude?: string,
+    @Args('anyLocation', { type: () => Boolean, nullable: true }) anyLocation?: boolean,
     @Args('photos', { type: () => [String], nullable: true }) photos?: string[],
     @Args('interests', { type: () => [String], nullable: true }) interests?: string[],
     @Args('minAge', { type: () => Int, nullable: true }) minAge?: number,
@@ -58,9 +59,19 @@ export class ProfilesResolver {
     if (gender !== undefined) updateData.gender = gender;
     if (lookingFor !== undefined) updateData.lookingFor = lookingFor;
     if (purpose !== undefined) updateData.purpose = purpose;
-    if (city !== undefined) updateData.city = city;
-    if (latitude !== undefined) updateData.latitude = latitude;
-    if (longitude !== undefined) updateData.longitude = longitude;
+    if (anyLocation === true) {
+      // Если выбрано "неважно" - сбрасываем город и координаты
+      updateData.city = null;
+      updateData.latitude = null;
+      updateData.longitude = null;
+      updateData.anyLocation = true;
+    } else if (anyLocation === false || city !== undefined || latitude !== undefined || longitude !== undefined) {
+      // Если указан конкретный город/координаты
+      if (city !== undefined) updateData.city = city;
+      if (latitude !== undefined) updateData.latitude = latitude;
+      if (longitude !== undefined) updateData.longitude = longitude;
+      if (anyLocation === false) updateData.anyLocation = false;
+    }
     if (photos !== undefined) updateData.photos = photos;
     if (interests !== undefined) updateData.interests = interests;
     if (minAge !== undefined) updateData.minAge = minAge;
