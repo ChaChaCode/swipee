@@ -7,6 +7,7 @@ import { interactions, profiles } from '../../database/schema';
 import { CreateInteractionInput } from './dto/create-interaction.input';
 import { InteractionType } from './models/interaction.model';
 import { Gender, LookingFor, Purpose } from '../profiles/models/profile.model';
+import { calculateAge } from '../../common/utils/age.utils';
 
 @Injectable()
 export class InteractionsService {
@@ -245,7 +246,7 @@ export class InteractionsService {
       userId: profile.userId,
       name: profile.name ?? undefined,
       bio: profile.bio ?? undefined,
-      age: profile.age ?? undefined,
+      age: calculateAge(profile.birthDate) ?? undefined,
       birthDate: profile.birthDate ?? undefined,
       gender: mapGender(profile.gender),
       lookingFor: mapLookingFor(profile.lookingFor),

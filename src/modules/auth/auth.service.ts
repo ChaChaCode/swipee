@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { TelegramService, TelegramInitData } from './telegram.service';
 import { UsersService } from '../users/users.service';
 import { ProfilesService } from '../profiles/profiles.service';
+import { calculateAge } from '../../common/utils/age.utils';
 
 export interface AuthResult {
   user: {
@@ -101,7 +102,7 @@ export class AuthService {
       userId: profile.userId,
       name: profile.name,
       bio: profile.bio,
-      age: profile.age,
+      age: calculateAge(profile.birthDate),
       birthDate: profile.birthDate,
       gender: profile.gender,
       lookingFor: profile.lookingFor,

@@ -8,6 +8,7 @@ import {
   LookingFor,
 } from './models/onboarding.model';
 import { toPhotoModels } from '../profiles/models/photo.model';
+import { calculateAge } from '../../common/utils/age.utils';
 import {
   SetNameInput,
   SetBioInput,
@@ -16,7 +17,7 @@ import {
   SetInterestsInput,
   SetPhotosInput,
   SetLocationInput,
-  SetAgeInput,
+  SetBirthDateInput,
   CompleteOnboardingInput,
 } from './dto/onboarding.input';
 
@@ -35,7 +36,8 @@ export class OnboardingResolver {
       id: profile.id,
       name: profile.name ?? undefined,
       bio: profile.bio ?? undefined,
-      age: profile.age ?? undefined,
+      birthDate: profile.birthDate ?? undefined,
+      age: calculateAge(profile.birthDate) ?? undefined,
       gender: profile.gender as Gender | undefined,
       lookingFor: profile.lookingFor as LookingFor | undefined,
       photos: toPhotoModels(profile.photos as string[]),
@@ -85,11 +87,11 @@ export class OnboardingResolver {
   }
 
   @Mutation(() => OnboardingProfile)
-  async setAge(
+  async setBirthDate(
     @Args('userId') userId: string,
-    @Args('input') input: SetAgeInput,
+    @Args('input') input: SetBirthDateInput,
   ): Promise<OnboardingProfile> {
-    const profile = await this.onboardingService.setAge(userId, input.age);
+    const profile = await this.onboardingService.setBirthDate(userId, input.birthDate);
     return this.mapToOnboardingProfile(profile);
   }
 
@@ -165,7 +167,7 @@ export class OnboardingResolver {
     if (input.bio) {
       await this.onboardingService.setBio(userId, input.bio);
     }
-    await this.onboardingService.setAge(userId, input.age);
+    await this.onboardingService.setBirthDate(userId, input.birthDate);
     await this.onboardingService.setGender(
       userId,
       input.gender.toLowerCase() as 'male' | 'female' | 'other',
@@ -194,7 +196,8 @@ export class OnboardingResolver {
       id: profile.id,
       name: profile.name ?? undefined,
       bio: profile.bio ?? undefined,
-      age: profile.age ?? undefined,
+      birthDate: profile.birthDate ?? undefined,
+      age: calculateAge(profile.birthDate) ?? undefined,
       gender: profile.gender as Gender | undefined,
       lookingFor: profile.lookingFor as LookingFor | undefined,
       photos: toPhotoModels(profile.photos as string[]),

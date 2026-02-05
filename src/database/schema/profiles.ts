@@ -30,7 +30,6 @@ export const profiles = pgTable('profiles', {
   name: text('name'), // Display name (can differ from Telegram)
   bio: text('bio'),
   birthDate: timestamp('birth_date'),
-  age: integer('age'),
 
   // Gender & preferences
   gender: genderEnum('gender'),

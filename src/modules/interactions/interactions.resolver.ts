@@ -7,6 +7,7 @@ import { InteractionsService } from './interactions.service';
 import { CreateInteractionInput } from './dto/create-interaction.input';
 import { MatchesService } from '../matches/matches.service';
 import { toPhotoModels } from '../profiles/models/photo.model';
+import { calculateAge } from '../../common/utils/age.utils';
 
 @Resolver(() => InteractionModel)
 export class InteractionsResolver {
@@ -79,6 +80,7 @@ export class InteractionsResolver {
       ...like,
       fromUser: {
         ...like.fromUser,
+        age: calculateAge(like.fromUser.birthDate as Date | null) ?? undefined,
         photos: toPhotoModels(like.fromUser.photos as string[]),
       },
     }));
@@ -93,6 +95,7 @@ export class InteractionsResolver {
       ...superLike,
       fromUser: {
         ...superLike.fromUser,
+        age: calculateAge(superLike.fromUser.birthDate as Date | null) ?? undefined,
         photos: toPhotoModels(superLike.fromUser.photos as string[]),
       },
     }));

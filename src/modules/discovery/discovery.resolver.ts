@@ -2,6 +2,7 @@ import { Resolver, Query, Args, Int } from '@nestjs/graphql';
 import { DiscoveryService } from './discovery.service';
 import { DiscoveryProfile, DiscoveryResult } from './models/discovery.model';
 import { toPhotoModels } from '../profiles/models/photo.model';
+import { calculateAge } from '../../common/utils/age.utils';
 
 @Resolver()
 export class DiscoveryResolver {
@@ -30,7 +31,7 @@ export class DiscoveryResolver {
         userId: p.userId,
         name: p.name ?? undefined,
         bio: p.bio ?? undefined,
-        age: p.age ?? undefined,
+        age: calculateAge(p.birthDate) ?? undefined,
         gender: p.gender as any,
         lookingFor: p.lookingFor as any,
         city: p.city ?? undefined,
@@ -62,7 +63,7 @@ export class DiscoveryResolver {
       userId: p.userId,
       name: p.name ?? undefined,
       bio: p.bio ?? undefined,
-      age: p.age ?? undefined,
+      age: calculateAge(p.birthDate) ?? undefined,
       gender: p.gender as any,
       lookingFor: p.lookingFor as any,
       city: p.city ?? undefined,

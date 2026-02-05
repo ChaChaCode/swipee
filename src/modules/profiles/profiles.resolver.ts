@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { ProfileModel, Gender, LookingFor, Purpose } from './models/profile.model';
 import { PhotoModel, toPhotoModels } from './models/photo.model';
 import { ProfilesService } from './profiles.service';
+import { calculateAge } from '../../common/utils/age.utils';
 
 @Resolver(() => ProfileModel)
 export class ProfilesResolver {
@@ -11,6 +12,11 @@ export class ProfilesResolver {
   @ResolveField(() => [PhotoModel])
   photos(@Parent() profile: { photos: string[] | null }): PhotoModel[] {
     return toPhotoModels(profile.photos);
+  }
+
+  @ResolveField(() => Int, { nullable: true })
+  age(@Parent() profile: { birthDate: Date | null }): number | null {
+    return calculateAge(profile.birthDate);
   }
 
   @Query(() => ProfileModel, { nullable: true })

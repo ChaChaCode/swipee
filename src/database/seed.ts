@@ -287,7 +287,6 @@ async function seed() {
       userId: userId,
       name: userData.profile.name,
       bio: userData.profile.bio,
-      age: userData.profile.age,
       birthDate: userData.profile.birthDate,
       gender: userData.profile.gender,
       lookingFor: userData.profile.lookingFor,

@@ -595,7 +595,8 @@ query OnboardingProfile($userId: String!) {
     id
     name
     bio
-    age
+    birthDate
+    age        # Вычисляемое поле
     gender
     lookingFor
     photos {
@@ -623,7 +624,7 @@ query OnboardingStatus($userId: String!) {
   onboardingStatus(userId: $userId) {
     hasName
     hasBio
-    hasAge
+    hasBirthDate
     hasGender
     hasLookingFor
     hasInterests
@@ -642,7 +643,7 @@ query OnboardingStatus($userId: String!) {
 |------|-----|----------|
 | `hasName` | Boolean | Имя заполнено |
 | `hasBio` | Boolean | О себе заполнено |
-| `hasAge` | Boolean | Возраст указан |
+| `hasBirthDate` | Boolean | Дата рождения указана |
 | `hasGender` | Boolean | Пол указан |
 | `hasLookingFor` | Boolean | Кого ищет указано |
 | `hasInterests` | Boolean | Интересы выбраны |
@@ -718,14 +719,15 @@ input SetBioInput {
 
 ---
 
-### Mutation: `setAge`
+### Mutation: `setBirthDate`
 
-Установить возраст.
+Установить дату рождения. Возраст вычисляется автоматически.
 
 ```graphql
-mutation SetAge($userId: String!, $input: SetAgeInput!) {
-  setAge(userId: $userId, input: $input) {
+mutation SetBirthDate($userId: String!, $input: SetBirthDateInput!) {
+  setBirthDate(userId: $userId, input: $input) {
     id
+    birthDate
     age
   }
 }
@@ -733,10 +735,12 @@ mutation SetAge($userId: String!, $input: SetAgeInput!) {
 
 **Input:**
 ```graphql
-input SetAgeInput {
-  age: Int!  # 16-120
+input SetBirthDateInput {
+  birthDate: DateTime!
 }
 ```
+
+**Примечание:** `age` — вычисляемое поле, не хранится в базе данных.
 
 ---
 
@@ -996,7 +1000,7 @@ mutation CompleteOnboarding($userId: String!, $input: CompleteOnboardingInput!) 
 input CompleteOnboardingInput {
   name: String!           # 1-50 символов
   bio: String             # до 500 символов (опционально)
-  age: Int!               # 16-120
+  birthDate: DateTime!    # Дата рождения
   gender: Gender!         # MALE, FEMALE, OTHER
   lookingFor: LookingFor! # MALE, FEMALE, BOTH
   interestIds: [String!]! # ID интересов
@@ -1031,8 +1035,8 @@ await client.mutate({
 });
 
 await client.mutate({
-  mutation: SET_AGE,
-  variables: { userId, input: { age: 25 } }
+  mutation: SET_BIRTH_DATE,
+  variables: { userId, input: { birthDate: '2000-05-15' } }
 });
 
 await client.mutate({
@@ -1065,7 +1069,7 @@ await client.mutate({
     userId,
     input: {
       name: 'Анна',
-      age: 25,
+      birthDate: '2000-05-15',
       gender: 'FEMALE',
       lookingFor: 'MALE',
       interestIds: ['id1', 'id2', 'id3'],

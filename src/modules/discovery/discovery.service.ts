@@ -14,6 +14,7 @@ import {
 import { DRIZZLE } from '../../database/database.module';
 import type { Database } from '../../database/database.module';
 import { profiles, interactions, matches } from '../../database/schema';
+import { getMinBirthDateForAge, getMaxBirthDateForAge } from '../../common/utils/age.utils';
 
 export interface DiscoveryFilters {
   userId: string;
@@ -117,15 +118,19 @@ export class DiscoveryService {
       );
     }
 
-    // Filter by age range (my preferences)
+    // Filter by age range (my preferences) using birthDate
+    // minAge means we want people at least this old (birthDate <= maxBirthDate)
     if (myProfile.minAge) {
+      const maxBirthDate = getMaxBirthDateForAge(myProfile.minAge);
       conditions.push(
-        or(gte(profiles.age, myProfile.minAge), isNull(profiles.age))!,
+        or(lte(profiles.birthDate, maxBirthDate), isNull(profiles.birthDate))!,
       );
     }
+    // maxAge means we want people at most this old (birthDate >= minBirthDate)
     if (myProfile.maxAge) {
+      const minBirthDate = getMinBirthDateForAge(myProfile.maxAge);
       conditions.push(
-        or(lte(profiles.age, myProfile.maxAge), isNull(profiles.age))!,
+        or(gte(profiles.birthDate, minBirthDate), isNull(profiles.birthDate))!,
       );
     }
 

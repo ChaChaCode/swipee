@@ -40,10 +40,10 @@ export class OnboardingService {
     return result[0];
   }
 
-  async setAge(userId: string, age: number) {
+  async setBirthDate(userId: string, birthDate: Date) {
     const result = await this.db
       .update(profiles)
-      .set({ age, updatedAt: new Date() })
+      .set({ birthDate, updatedAt: new Date() })
       .where(eq(profiles.userId, userId))
       .returning();
     return result[0];
@@ -150,7 +150,7 @@ export class OnboardingService {
 
     const hasName = !!profile.name;
     const hasBio = !!profile.bio;
-    const hasAge = !!profile.age;
+    const hasBirthDate = !!profile.birthDate;
     const hasGender = !!profile.gender;
     const hasLookingFor = !!profile.lookingFor;
     const hasInterests = interestsList.length > 0;
@@ -159,7 +159,7 @@ export class OnboardingService {
 
     const isComplete =
       hasName &&
-      hasAge &&
+      hasBirthDate &&
       hasGender &&
       hasLookingFor &&
       hasPhotos &&
@@ -168,7 +168,7 @@ export class OnboardingService {
     return {
       hasName,
       hasBio,
-      hasAge,
+      hasBirthDate,
       hasGender,
       hasLookingFor,
       hasInterests,

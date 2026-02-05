@@ -1,5 +1,5 @@
-import { Field, InputType, Int } from '@nestjs/graphql';
-import { Min, Max, MinLength, MaxLength, ArrayMinSize, ArrayMaxSize } from 'class-validator';
+import { Field, InputType } from '@nestjs/graphql';
+import { MinLength, MaxLength, ArrayMinSize, ArrayMaxSize } from 'class-validator';
 import { Gender, LookingFor } from '../models/onboarding.model';
 
 @InputType()
@@ -59,11 +59,9 @@ export class SetLocationInput {
 }
 
 @InputType()
-export class SetAgeInput {
-  @Field(() => Int)
-  @Min(16)
-  @Max(120)
-  age: number;
+export class SetBirthDateInput {
+  @Field()
+  birthDate: Date;
 }
 
 @InputType()
@@ -77,10 +75,8 @@ export class CompleteOnboardingInput {
   @MaxLength(500)
   bio?: string;
 
-  @Field(() => Int)
-  @Min(16)
-  @Max(120)
-  age: number;
+  @Field()
+  birthDate: Date;
 
   @Field(() => Gender)
   gender: Gender;

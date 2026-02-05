@@ -29,8 +29,11 @@ export class OnboardingProfile {
   @Field({ nullable: true })
   bio?: string;
 
+  @Field({ nullable: true })
+  birthDate?: Date;
+
   @Field(() => Int, { nullable: true })
-  age?: number;
+  age?: number; // Computed from birthDate
 
   @Field(() => Gender, { nullable: true })
   gender?: Gender;
@@ -69,7 +72,7 @@ export class OnboardingStatus {
   hasBio: boolean;
 
   @Field()
-  hasAge: boolean;
+  hasBirthDate: boolean;
 
   @Field()
   hasGender: boolean;
