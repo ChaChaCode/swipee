@@ -11,6 +11,7 @@ import { NotificationsModule } from './modules/notifications';
 import { UploadModule } from './modules/upload';
 import { OnboardingModule } from './modules/onboarding';
 import { DiscoveryModule } from './modules/discovery';
+import { GeocodingModule } from './modules/geocoding';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { DiscoveryModule } from './modules/discovery';
     UploadModule,
     OnboardingModule,
     DiscoveryModule,
+    GeocodingModule,
   ],
 })
 export class AppModule {}

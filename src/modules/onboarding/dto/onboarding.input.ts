@@ -53,6 +53,9 @@ export class SetLocationInput {
 
   @Field({ nullable: true })
   longitude?: string;
+
+  @Field({ nullable: true })
+  anyLocation?: boolean; // true = show profiles from anywhere
 }
 
 @InputType()
@@ -101,4 +104,7 @@ export class CompleteOnboardingInput {
 
   @Field({ nullable: true })
   longitude?: string;
+
+  @Field({ nullable: true })
+  anyLocation?: boolean; // true = show profiles from anywhere
 }

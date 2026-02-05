@@ -41,6 +41,7 @@ export const profiles = pgTable('profiles', {
   city: text('city'),
   latitude: text('latitude'),
   longitude: text('longitude'),
+  anyLocation: boolean('any_location').default(false), // true = show profiles from anywhere
 
   // Media & interests
   photos: jsonb('photos').$type<string[]>().default([]),

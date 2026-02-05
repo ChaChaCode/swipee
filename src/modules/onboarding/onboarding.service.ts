@@ -4,10 +4,14 @@ import { DRIZZLE } from '../../database/database.module';
 import type { Database } from '../../database/database.module';
 import { profiles, interests } from '../../database/schema';
 import { OnboardingStatus } from './models/onboarding.model';
+import { GeocodingService } from '../geocoding/geocoding.service';
 
 @Injectable()
 export class OnboardingService {
-  constructor(@Inject(DRIZZLE) private db: Database) {}
+  constructor(
+    @Inject(DRIZZLE) private db: Database,
+    private geocodingService: GeocodingService,
+  ) {}
 
   async getProfile(userId: string) {
     const result = await this.db
@@ -83,11 +87,46 @@ export class OnboardingService {
 
   async setLocation(
     userId: string,
-    location: { city?: string; latitude?: string; longitude?: string },
+    location: { city?: string; latitude?: string; longitude?: string; anyLocation?: boolean },
   ) {
+    let city = location.city;
+
+    // Если выбрано "неважно", сбрасываем город и координаты
+    if (location.anyLocation) {
+      const result = await this.db
+        .update(profiles)
+        .set({
+          city: null,
+          latitude: null,
+          longitude: null,
+          anyLocation: true,
+          updatedAt: new Date(),
+        })
+        .where(eq(profiles.userId, userId))
+        .returning();
+      return result[0];
+    }
+
+    // Автоопределение города по координатам, если город не указан
+    if (!city && location.latitude && location.longitude) {
+      const geoResult = await this.geocodingService.getCityFromCoordinates(
+        location.latitude,
+        location.longitude,
+      );
+      if (geoResult.city) {
+        city = geoResult.city;
+      }
+    }
+
     const result = await this.db
       .update(profiles)
-      .set({ ...location, updatedAt: new Date() })
+      .set({
+        city,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        anyLocation: false,
+        updatedAt: new Date(),
+      })
       .where(eq(profiles.userId, userId))
       .returning();
     return result[0];
@@ -115,8 +154,8 @@ export class OnboardingService {
     const hasGender = !!profile.gender;
     const hasLookingFor = !!profile.lookingFor;
     const hasInterests = interestsList.length > 0;
-    const hasPhotos = photos.length >= 2;
-    const hasLocation = !!(profile.city || (profile.latitude && profile.longitude));
+    const hasPhotos = photos.length >= 1;
+    const hasLocation = !!profile.anyLocation || !!(profile.city || (profile.latitude && profile.longitude));
 
     const isComplete =
       hasName &&

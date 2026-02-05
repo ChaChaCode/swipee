@@ -132,6 +132,24 @@ export class DiscoveryService {
     // Build base query
     const baseCondition = and(...conditions);
 
+    // Check if user wants profiles from anywhere (anyLocation = true OR no location set)
+    const showFromAnywhere = myProfile.anyLocation || (!myProfile.city && !myProfile.latitude && !myProfile.longitude);
+
+    // If showing from anywhere - skip location filtering
+    if (showFromAnywhere) {
+      const results = await this.db
+        .select()
+        .from(profiles)
+        .where(baseCondition)
+        .limit(limit)
+        .offset(offset);
+
+      return results.map((r) => ({
+        ...r,
+        distance: null as number | null,
+      }));
+    }
+
     // If both users have location, calculate distance
     if (myProfile.latitude && myProfile.longitude) {
       const lat = parseFloat(myProfile.latitude);

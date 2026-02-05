@@ -602,6 +602,7 @@ query OnboardingProfile($userId: String!) {
     city
     latitude
     longitude
+    anyLocation
     onboardingCompleted
   }
 }
@@ -642,7 +643,7 @@ query OnboardingStatus($userId: String!) {
 | `hasLookingFor` | Boolean | Кого ищет указано |
 | `hasInterests` | Boolean | Интересы выбраны |
 | `hasPhotos` | Boolean | Фото загружены |
-| `hasLocation` | Boolean | Локация указана |
+| `hasLocation` | Boolean | Локация указана (включая anyLocation = true) |
 | `isComplete` | Boolean | Онбординг завершен |
 | `photosCount` | Int | Количество фото |
 | `interestsCount` | Int | Количество интересов |
@@ -825,7 +826,7 @@ input SetPhotosInput {
 
 ### Mutation: `setLocation`
 
-Установить локацию.
+Установить локацию. **Город определяется автоматически по координатам**, если не указан.
 
 ```graphql
 mutation SetLocation($userId: String!, $input: SetLocationInput!) {
@@ -834,6 +835,7 @@ mutation SetLocation($userId: String!, $input: SetLocationInput!) {
     city
     latitude
     longitude
+    anyLocation
   }
 }
 ```
@@ -841,10 +843,126 @@ mutation SetLocation($userId: String!, $input: SetLocationInput!) {
 **Input:**
 ```graphql
 input SetLocationInput {
-  city: String
-  latitude: String
-  longitude: String
+  city: String       # Опционально - определится автоматически из координат
+  latitude: String   # Широта
+  longitude: String  # Долгота
+  anyLocation: Boolean # true = показывать анкеты откуда угодно
 }
+```
+
+**Опция anyLocation:**
+
+Если `anyLocation: true`:
+- Город, широта и долгота сбрасываются (устанавливаются в null)
+- Пользователю будут показываться анкеты из любых городов/локаций
+- Поле `hasLocation` в `onboardingStatus` будет `true`
+
+Если пользователь не указал город и не имеет координат - это также означает "неважно откуда", и ему показываются все анкеты.
+
+**Примеры:**
+
+```javascript
+// Вариант 1: Только координаты (город определится автоматически)
+await client.mutate({
+  mutation: SET_LOCATION,
+  variables: {
+    userId,
+    input: {
+      latitude: "55.7558",
+      longitude: "37.6173"
+    }
+  }
+});
+// Результат: city = "Москва" (определено автоматически)
+
+// Вариант 2: Только город (ручной ввод)
+await client.mutate({
+  mutation: SET_LOCATION,
+  variables: {
+    userId,
+    input: {
+      city: "Санкт-Петербург"
+    }
+  }
+});
+
+// Вариант 3: Геолокация из Telegram
+window.Telegram.WebApp.requestLocation((granted, location) => {
+  if (granted && location) {
+    await client.mutate({
+      mutation: SET_LOCATION,
+      variables: {
+        userId,
+        input: {
+          latitude: String(location.latitude),
+          longitude: String(location.longitude)
+        }
+      }
+    });
+  }
+});
+
+// Вариант 4: "Неважно откуда" - показывать все анкеты
+await client.mutate({
+  mutation: SET_LOCATION,
+  variables: {
+    userId,
+    input: {
+      anyLocation: true
+    }
+  }
+});
+```
+
+---
+
+## Геокодинг
+
+### Query: `getCityFromCoordinates`
+
+Получить название города по координатам (reverse geocoding).
+
+```graphql
+query GetCityFromCoordinates($latitude: String!, $longitude: String!) {
+  getCityFromCoordinates(latitude: $latitude, longitude: $longitude) {
+    city
+    region
+    country
+    displayName
+  }
+}
+```
+
+**Параметры:**
+- `latitude` - широта
+- `longitude` - долгота
+
+**Ответ:**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `city` | String? | Название города |
+| `region` | String? | Регион/область |
+| `country` | String? | Страна |
+| `displayName` | String? | Полный адрес |
+
+**Пример использования:**
+
+```javascript
+// Получить город из координат Telegram
+window.Telegram.WebApp.requestLocation(async (granted, location) => {
+  if (granted && location) {
+    const { data } = await client.query({
+      query: GET_CITY_FROM_COORDINATES,
+      variables: {
+        latitude: String(location.latitude),
+        longitude: String(location.longitude)
+      }
+    });
+
+    console.log(data.getCityFromCoordinates.city); // "Москва"
+  }
+});
 ```
 
 ---
@@ -882,6 +1000,7 @@ input CompleteOnboardingInput {
   city: String            # опционально
   latitude: String        # опционально
   longitude: String       # опционально
+  anyLocation: Boolean    # опционально - если true, показывать анкеты откуда угодно
 }
 ```
 

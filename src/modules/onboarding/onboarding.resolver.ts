@@ -43,6 +43,7 @@ export class OnboardingResolver {
       city: profile.city ?? undefined,
       latitude: profile.latitude ?? undefined,
       longitude: profile.longitude ?? undefined,
+      anyLocation: profile.anyLocation ?? undefined,
       onboardingCompleted: profile.onboardingCompleted ?? false,
     };
   }
@@ -149,6 +150,7 @@ export class OnboardingResolver {
       city: input.city,
       latitude: input.latitude,
       longitude: input.longitude,
+      anyLocation: input.anyLocation,
     });
     return this.mapToOnboardingProfile(profile);
   }
@@ -174,11 +176,12 @@ export class OnboardingResolver {
     );
     await this.onboardingService.setInterests(userId, input.interestIds);
     await this.onboardingService.setPhotos(userId, input.photoUrls);
-    if (input.city || input.latitude || input.longitude) {
+    if (input.city || input.latitude || input.longitude || input.anyLocation) {
       await this.onboardingService.setLocation(userId, {
         city: input.city,
         latitude: input.latitude,
         longitude: input.longitude,
+        anyLocation: input.anyLocation,
       });
     }
 
@@ -199,6 +202,7 @@ export class OnboardingResolver {
       city: profile.city ?? undefined,
       latitude: profile.latitude ?? undefined,
       longitude: profile.longitude ?? undefined,
+      anyLocation: profile.anyLocation ?? undefined,
       onboardingCompleted: profile.onboardingCompleted ?? false,
     };
   }
