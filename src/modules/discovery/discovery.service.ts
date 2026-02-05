@@ -137,10 +137,16 @@ export class DiscoveryService {
     // Build base query
     const baseCondition = and(...conditions);
 
-    // Check if user wants profiles from anywhere (anyLocation = true OR no location set)
-    const showFromAnywhere = myProfile.anyLocation || (!myProfile.city && !myProfile.latitude && !myProfile.longitude);
+    // Location filtering logic:
+    // 1. anyLocation = true OR no city → show all profiles (coordinates alone don't filter)
+    // 2. Has city but no coordinates → filter by city (exact match)
+    // 3. Has city AND coordinates → filter by distance
 
-    // If showing from anywhere - skip location filtering
+    const hasCity = !!myProfile.city;
+    const hasCoordinates = !!(myProfile.latitude && myProfile.longitude);
+    const showFromAnywhere = myProfile.anyLocation || !hasCity;
+
+    // Case 1: Show profiles from anywhere - no location filtering
     if (showFromAnywhere) {
       const results = await this.db
         .select()
@@ -155,10 +161,30 @@ export class DiscoveryService {
       }));
     }
 
-    // If both users have location, calculate distance
-    if (myProfile.latitude && myProfile.longitude) {
-      const lat = parseFloat(myProfile.latitude);
-      const lon = parseFloat(myProfile.longitude);
+    // Case 2: Has city but no coordinates - filter by city name
+    if (hasCity && !hasCoordinates) {
+      const cityCondition = and(
+        baseCondition,
+        eq(profiles.city, myProfile.city!),
+      );
+
+      const results = await this.db
+        .select()
+        .from(profiles)
+        .where(cityCondition)
+        .limit(limit)
+        .offset(offset);
+
+      return results.map((r) => ({
+        ...r,
+        distance: null as number | null,
+      }));
+    }
+
+    // Case 3: Has coordinates - filter by distance
+    if (hasCoordinates) {
+      const lat = parseFloat(myProfile.latitude!);
+      const lon = parseFloat(myProfile.longitude!);
 
       // Calculate distance using Haversine formula
       const distanceExpr = sql<number>`(
@@ -202,7 +228,7 @@ export class DiscoveryService {
       }));
     }
 
-    // No location - just return profiles without distance
+    // Fallback - should not reach here
     const results = await this.db
       .select()
       .from(profiles)
